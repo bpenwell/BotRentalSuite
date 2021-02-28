@@ -36,32 +36,32 @@ namespace BotHelper.Modules
         [RequireUserPermission(ChannelPermission.ManageRoles)]
         public async Task AddToSchedule(string botName, string quantity, string region, string discordID)
         {
+            //Backend will determine if this scheduling is possible
+            bool failure = false;
+            if (failure)
+            {
+                var reason = "U suck kid";
+                await ReplyAsync($"Scheduling failed for the following reason: {reason}");
+                return;
+            }
+
+            //Make a private channel, deny all permissions unless you are explicitly the owner or the client
             var idParts = discordID.Split('!', '<', '>');
             var serverUser = Context.Client.GetUser(Convert.ToUInt64(idParts[2]));
             var user = serverUser.Username;
-
-            Random ran = new Random();
-            ulong origin = (ulong)GuildPermission.Speak + (ulong)GuildPermission.SendTTSMessages + (ulong)GuildPermission.SendMessages + (ulong)GuildPermission.ViewChannel + (ulong)GuildPermission.EmbedLinks + (ulong)GuildPermission.Connect + (ulong)GuildPermission.AttachFiles + (ulong)GuildPermission.AddReactions;
-            GuildPermissions perms = new GuildPermissions(origin);
-
-            var ticketChannelName = AppHelpers.GetNextTicketName(user);
-            TextChannelProperties props = new TextChannelProperties();
-
-            var everyoneOverrides = new OverwritePermissions(PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny);
-            var clientOverrides = new OverwritePermissions(PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Allow, PermValue.Allow, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny);
+            var ticketChannelName = AppHelpers.GetNextTicketName(user).ToLower();
             var ticketChannel = await Context.Guild.CreateTextChannelAsync($"{ticketChannelName}");
+            await ticketChannel.AddPermissionOverwriteAsync(Context.Guild.EveryoneRole, AppHelpers.GetEveryonePermissionOverrides());
+            await ticketChannel.AddPermissionOverwriteAsync(Context.Guild.Owner, AppHelpers.GetClientPermissionOverrides());
+            await ticketChannel.AddPermissionOverwriteAsync(serverUser, AppHelpers.GetClientPermissionOverrides());
 
-            //Make a private channel
-            await ticketChannel.AddPermissionOverwriteAsync(Context.Guild.EveryoneRole, everyoneOverrides);
-            await ticketChannel.AddPermissionOverwriteAsync(Context.Guild.Owner, clientOverrides);
-            await ticketChannel.AddPermissionOverwriteAsync(serverUser, clientOverrides);
-
+            // Confirm success via in the current channel
             EmbedBuilder builder = new EmbedBuilder();
             builder.WithTitle("Scheduler")
                 .AddField("Success",
                 $"{builder.Author} scheduled you to rent {quantity} {botName} for the {region} region!\n" +
-                $"Your delivery channel is #{ticketChannelName}. The key will be delivered to this channel. \n" +
-                $" \n");
+                $"Your delivery channel is {ticketChannel.Mention}. The key will be delivered to this channel.\n");
+
             await ReplyAsync("", false, builder.Build());
         }
     }

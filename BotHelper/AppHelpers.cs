@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Discord;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -19,12 +20,22 @@ namespace BotHelper
             var ticketName = $"ticket-{m_ticketNumber}";
             m_ticketNumber++;
 
-            foreach(var part in nameParts)
+            foreach (var part in nameParts)
             {
                 ticketName += $"-{part}";
             }
 
             return ticketName;
+        }
+
+        public static OverwritePermissions GetEveryonePermissionOverrides()
+        {
+            return new OverwritePermissions(PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny);
+        }
+
+        public static OverwritePermissions GetClientPermissionOverrides()
+        {
+            return new OverwritePermissions(PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Allow, PermValue.Allow, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny, PermValue.Deny);
         }
     }
 }

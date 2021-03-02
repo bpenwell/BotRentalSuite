@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
@@ -8,21 +9,43 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace BotHelper
+namespace RewardingRentals.Server
 {
-    public class DiscordConnection
+    public sealed class DiscordConnection
     {
-        private DiscordSocketClient m_client;
-        private CommandService m_commands;
-        private IServiceProvider m_services;
-        private string m_token;
-        public DiscordConnection(string token)
+        private static readonly DiscordConnection m_instance = new DiscordConnection();
+
+        private DiscordConnection() { }
+
+        public static DiscordConnection Instance
         {
-            m_token = token;
+            get
+            {
+                return m_instance;
+            }
         }
 
-        public async Task StartupBot()
+        public bool Connected { get; private set; }
+
+        public string Token { get; private set; }
+
+        private ulong m_serverId = 767916439600103515;
+
+        private DiscordSocketClient m_client;
+
+        private CommandService m_commands;
+
+        private IServiceProvider m_services;
+
+        public async Task StartupBot(string token)
         {
+            Token = token;
+            if (Token.Length == 0)
+            {
+                Console.WriteLine("Failed StartupBot: m_token is empty");
+                return;
+            }
+
             DiscordSocketConfig config = new DiscordSocketConfig();
             config.AlwaysDownloadUsers = true;
 
@@ -34,12 +57,37 @@ namespace BotHelper
                 .BuildServiceProvider();
 
             m_client.Log += LogClient;
+            m_client.Connected += BotConnected;
+            m_client.Disconnected += BotDisconnected;
 
             await RegisterCommandsAsync();
-            await m_client.LoginAsync(TokenType.Bot, m_token);
+            await m_client.LoginAsync(TokenType.Bot, Token);
             await m_client.StartAsync();
+        }
 
-            await Task.Delay(-1);
+        public async Task DeliverKeyAndDie(string key, string channelName)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(5));
+            var channels = m_client.GetGuild(m_serverId).TextChannels;
+            var applicableChannel = channels.SingleOrDefault(c => c.Name == channelName);
+            EmbedBuilder builder = new EmbedBuilder();
+            builder.WithTitle("Delivery Time!")
+                .AddField("Your Key",
+                $"{key}\n" +
+                "Good luck on your drop!");
+            await applicableChannel.SendMessageAsync("", false, builder.Build());
+        }
+
+        private Task BotConnected()
+        {
+            Connected = true;
+            return Task.CompletedTask;
+        }
+
+        private Task BotDisconnected(Exception exception)
+        {
+            Connected = false;
+            return Task.CompletedTask;
         }
 
         private Task LogClient(LogMessage arg)
@@ -51,7 +99,7 @@ namespace BotHelper
         public async Task RegisterCommandsAsync()
         {
             m_client.MessageReceived += HandleCommandAsync;
-            var assembly = Assembly.LoadFrom("BotHelper");
+            var assembly = Assembly.LoadFrom("Server");
             var modules = await m_commands.AddModulesAsync(assembly, m_services);
             var modulesList = modules as IList;
             if (modulesList.Count == 0)
@@ -60,7 +108,7 @@ namespace BotHelper
             }
         }
 
-        private async Task HandleCommandAsync(SocketMessage arg)
+        public async Task HandleCommandAsync(SocketMessage arg)
         {
             var message = arg as SocketUserMessage;
             if (message.Author.IsBot)

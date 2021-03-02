@@ -2,8 +2,9 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Utilities;
 
-namespace BotHelper.Modules
+namespace RewardingRentals.Server
 {
     public class Commands : ModuleBase<SocketCommandContext>
     {
@@ -25,20 +26,20 @@ namespace BotHelper.Modules
             await ReplyAsync("", false, builder.Build());
         }
 
-        [Command("ping")]
-        public async Task Ping()
-        {
-            await ReplyAsync("Pong");
-        }
-
         [Command("schedule")]
         //This will allow supports to schedule with the bot
         [RequireUserPermission(ChannelPermission.ManageRoles)]
-        public async Task AddToSchedule(string botName, string quantity, string region, string discordID)
+        public async Task AddToSchedule(string botName, DateTime dropDate, long quantity, string region, string discordID, decimal totalPrice, string timeBeforeDrop)
         {
+            var idParts = discordID.Split('!', '<', '>');
+            var serverUser = Context.Client.GetUser(Convert.ToUInt64(idParts[2]));
+            var user = serverUser.Username;
+            var ticketChannelName = AppHelpers.GetNextTicketName(user, botName).ToLower();
+
             //Backend will determine if this scheduling is possible
-            bool failure = false;
-            if (failure)
+            var result = ScheduleManager.Instance.TryAddToSchedule(botName, dropDate, quantity, region, discordID, ticketChannelName, totalPrice, AppHelpers.GetRentalDeliveryTime(timeBeforeDrop));
+
+            if (result.Code == ResultEnum.Unavailable)
             {
                 var reason = "U suck kid";
                 await ReplyAsync($"Scheduling failed for the following reason: {reason}");
@@ -46,10 +47,6 @@ namespace BotHelper.Modules
             }
 
             //Make a private channel, deny all permissions unless you are explicitly the owner or the client
-            var idParts = discordID.Split('!', '<', '>');
-            var serverUser = Context.Client.GetUser(Convert.ToUInt64(idParts[2]));
-            var user = serverUser.Username;
-            var ticketChannelName = AppHelpers.GetNextTicketName(user).ToLower();
             var ticketChannel = await Context.Guild.CreateTextChannelAsync($"{ticketChannelName}");
             await ticketChannel.AddPermissionOverwriteAsync(Context.Guild.EveryoneRole, AppHelpers.GetEveryonePermissionOverrides());
             await ticketChannel.AddPermissionOverwriteAsync(Context.Guild.Owner, AppHelpers.GetClientPermissionOverrides());

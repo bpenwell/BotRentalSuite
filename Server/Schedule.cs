@@ -3,20 +3,10 @@ using System.Threading.Tasks;
 
 namespace RewardingRentals.Server
 {
-    public class ScheduleReceiver
+    public class Schedule
     {
-        private static readonly ScheduleReceiver m_instance = new ScheduleReceiver();
-
-        private ScheduleReceiver()
+        public Schedule()
         {
-        }
-
-        public static ScheduleReceiver Instance
-        {
-            get
-            {
-                return m_instance;
-            }
         }
 
         public async Task Update()

@@ -8,6 +8,7 @@ namespace RewardingRentals.Client
     {
         public static void Main(string[] args) => new Program().MainAsync().GetAwaiter().GetResult();
 
+        public Schedule BotSchedule = new Schedule();
         public async Task MainAsync()
         {
             await DiscordConnection.Instance.StartupBot("NzYzOTc5MTY0NjkyMTE5NjEy.X3_lCg.H8wKbecgvaKBjbwJmZAvzBxfsCo");
@@ -29,7 +30,7 @@ namespace RewardingRentals.Client
 
         public async Task Update()
         {
-            await ScheduleReceiver.Instance.Update();
+            await BotSchedule.Update();
         }
     }
 }

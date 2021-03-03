@@ -13,17 +13,9 @@ namespace RewardingRentals.Server
 {
     public sealed class DiscordConnection
     {
-        private static readonly DiscordConnection m_instance = new DiscordConnection();
-
         private DiscordConnection() { }
 
-        public static DiscordConnection Instance
-        {
-            get
-            {
-                return m_instance;
-            }
-        }
+        public static DiscordConnection Instance { get; } = new DiscordConnection();
 
         public bool Connected { get; private set; }
 

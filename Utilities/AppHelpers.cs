@@ -101,5 +101,10 @@ namespace Utilities
         {
             return new TimeSpan(1, 0, 0);
         }
+
+        public static TimeSpan GetRentalChannelDeletionTime()
+        {
+            return new TimeSpan(1, 5, 0);
+        }
     }
 }

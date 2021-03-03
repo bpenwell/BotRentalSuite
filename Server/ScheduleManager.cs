@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Server;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -20,22 +21,9 @@ namespace RewardingRentals.Server
         public string Result;
     };
 
-    public struct RentalInformation
-    {
-        public string Key;
-
-        public DateTime DeliveryTime;
-        public DateTime CompletionTime;
-        public string DiscordID;
-        public string BotName;
-        public string ChannelName;
-        public long Quantity;
-        public decimal RentalPrice;
-    };
-
     public class ScheduleManager : ISaveable
     {
-        private static readonly ScheduleManager m_instance = new ScheduleManager();
+        public static ScheduleManager Instance { get; } = new ScheduleManager();
 
         /// <summary>
         /// Loads up saved data
@@ -48,14 +36,6 @@ namespace RewardingRentals.Server
             {
                 File.Create(m_absoluteSavePath);
                 return;
-            }
-        }
-
-        public static ScheduleManager Instance
-        {
-            get
-            {
-                return m_instance;
             }
         }
 
@@ -93,12 +73,64 @@ namespace RewardingRentals.Server
                 Quantity = quantity,
                 DiscordID = discordID,
                 ChannelName = channelName,
+                Region = region,
                 DeliveryTime = actualDropTime - deliveryTimeBeforeDrop,
                 CompletionTime = actualDropTime + AppHelpers.GetRentalCompletionTime(),
+                ChannelDeletionTime = actualDropTime + AppHelpers.GetRentalCompletionTime(),
                 RentalPrice = totalPrice
             };
 
-            m_undeliveredRentals.Add(newRental.DeliveryTime, newRental);
+            //First check undelivered rentals
+            long copiesAlreadyTaken = 0;
+            foreach (var rentalKVP in m_undeliveredRentals)
+            {
+                var rental = rentalKVP.Value;
+                if (newRental.IsTheSameDrop(rental))
+                {
+                    copiesAlreadyTaken += rental.Quantity;
+                }
+            }
+
+            //Now compare that to already delivered rentals
+            foreach (var rentalKVP in m_deliveredRentals)
+            {
+                var rental = rentalKVP.Value;
+                if (newRental.IsTheSameDrop(rental))
+                {
+                    copiesAlreadyTaken += rental.Quantity;
+                }
+            }
+
+            var maxKeysOwned = DeliveryManager.Instance.MaximumBotKeys(newRental.BotName);
+            if (copiesAlreadyTaken > maxKeysOwned)
+            {
+                throw new Exception("Congrats on breaking the system. Somehow, more copies are already taken than are available.");
+            }
+            else if (copiesAlreadyTaken == maxKeysOwned)
+            {
+                schedulerResult.Code = ResultEnum.Unavailable;
+                schedulerResult.Result = "Sorry! All of our keys are already rented out for this drop.";
+            }
+            else
+            {
+                var copiesAvailable = maxKeysOwned - copiesAlreadyTaken;
+
+                if (newRental.Quantity > copiesAvailable)
+                {
+                    schedulerResult.Code = ResultEnum.PartiallyUnavailable;
+                    schedulerResult.Result = $"So we have a bit of a situation. We only have {copiesAvailable} copies of {newRental.BotName} available. " +
+                        $"How many copies would you like to secure?";
+                }
+                else
+                {
+                    schedulerResult.Code = ResultEnum.Success;
+                    //Customize display to show delivery time in their regional time.
+                    schedulerResult.Result = $"Success! We have added you to the schedule. Expect key delivery at {newRental.DeliveryTime.ToLongDateString()} {newRental.DeliveryTime.ToLongTimeString()}!";
+
+                    //Only add when successful
+                    m_undeliveredRentals.Add(newRental.DeliveryTime, newRental);
+                }
+            }
 
             return schedulerResult;
         }

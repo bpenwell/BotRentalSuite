@@ -70,5 +70,18 @@ namespace Utilities
             MouseOperations.MouseEvent(MouseOperations.MouseEventFlags.LeftUp);
             await Task.Delay(1000);
         }
+
+        public static async Task TripleClick(MousePoint coord)
+        {
+            MouseOperations.SetCursorPosition(coord);
+            await Task.Delay(1000);
+            MouseOperations.MouseEvent(MouseOperations.MouseEventFlags.LeftDown);
+            MouseOperations.MouseEvent(MouseOperations.MouseEventFlags.LeftUp);
+            MouseOperations.MouseEvent(MouseOperations.MouseEventFlags.LeftDown);
+            MouseOperations.MouseEvent(MouseOperations.MouseEventFlags.LeftUp);
+            MouseOperations.MouseEvent(MouseOperations.MouseEventFlags.LeftDown);
+            MouseOperations.MouseEvent(MouseOperations.MouseEventFlags.LeftUp);
+            await Task.Delay(1000);
+        }
     }
 }

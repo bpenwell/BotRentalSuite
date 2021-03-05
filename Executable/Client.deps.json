@@ -90,6 +90,14 @@
           }
         }
       },
+      "InputSimulator/1.0.4": {
+        "runtime": {
+          "lib/net20/WindowsInput.dll": {
+            "assemblyVersion": "1.0.4.0",
+            "fileVersion": "1.0.4.0"
+          }
+        }
+      },
       "Microsoft.Extensions.DependencyInjection/5.0.0-rc.1.20451.14": {
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "5.0.0-rc.1.20451.14"
@@ -259,6 +267,7 @@
       "Utilities/1.0.0": {
         "dependencies": {
           "Discord.Net": "2.2.0",
+          "InputSimulator": "1.0.4",
           "Microsoft.Extensions.DependencyInjection": "5.0.0-rc.1.20451.14"
         },
         "runtime": {
@@ -321,6 +330,13 @@
       "sha512": "sha512-OwehD7vZ1CFAboLPrfBTibz/FeKg8DK1h242u0Y050dbfcOlb+d4S/iGBNt/yHaHIhCsmPiQqQjG13e441xWLA==",
       "path": "fluentscheduler/5.5.1",
       "hashPath": "fluentscheduler.5.5.1.nupkg.sha512"
+    },
+    "InputSimulator/1.0.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-D0LvRCPQMX6/FJHBjng+RO+wRDuHTJrfo7IAc7rmkPvRqchdVGJWg3y70peOtDy3OLNK+HSOwVkH4GiuLnkKgA==",
+      "path": "inputsimulator/1.0.4",
+      "hashPath": "inputsimulator.1.0.4.nupkg.sha512"
     },
     "Microsoft.Extensions.DependencyInjection/5.0.0-rc.1.20451.14": {
       "type": "package",

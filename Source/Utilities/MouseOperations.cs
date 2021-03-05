@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Utilities.Type;
 
 namespace Utilities
@@ -59,6 +60,15 @@ namespace Utilities
                  0,
                  0)
                 ;
+        }
+
+        public static async Task LeftClick(MousePoint coord)
+        {
+            MouseOperations.SetCursorPosition(coord);
+            await Task.Delay(1000);
+            MouseOperations.MouseEvent(MouseOperations.MouseEventFlags.LeftDown);
+            MouseOperations.MouseEvent(MouseOperations.MouseEventFlags.LeftUp);
+            await Task.Delay(1000);
         }
     }
 }

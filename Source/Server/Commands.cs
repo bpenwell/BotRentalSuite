@@ -64,12 +64,21 @@ namespace RewardingRentals.Server
         }
 
 
+        [Command("testOpenToolTab")]
+        //This will allow supports to schedule with the bot
+        [RequireUserPermission(ChannelPermission.ManageRoles)]
+        public async Task TestOpenToolTab(long number)
+        {
+            await DeliveryManager.Instance.GoToToolsPage();
+        }
+
+
         [Command("testOpenBot")]
         //This will allow supports to schedule with the bot
         [RequireUserPermission(ChannelPermission.ManageRoles)]
-        public async Task AddToSchedule(long number)
+        public async Task TestOpenBot(long number)
         {
-            await DeliveryManager.Instance.GoToToolsPage();
+            await DeliveryManager.Instance.GetBotKey(number);
         }
     }
 }

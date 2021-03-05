@@ -11,8 +11,9 @@ namespace Utilities.Type
 
         public MousePoint(int x, int y)
         {
-            X = x;
-            Y = y;
+            //Needs to be scaled to the screen
+            X = (x * 65535) / 1920;
+            Y = (y * 65535) / 1080;
         }
     }
 }

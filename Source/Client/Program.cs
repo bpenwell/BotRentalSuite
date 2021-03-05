@@ -1,5 +1,9 @@
 ﻿using RewardingRentals.Server;
+using RewardingRentals.Utilities;
 using System;
+using System.Diagnostics;
+using System.IO;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace RewardingRentals.Client
@@ -11,6 +15,9 @@ namespace RewardingRentals.Client
         public Schedule BotSchedule = new Schedule();
         public async Task MainAsync()
         {
+            var settings = SettingsFile.Instance;
+            settings.Parse();
+
             await DiscordConnection.Instance.StartupBot("NzYzOTc5MTY0NjkyMTE5NjEy.X3_lCg.H8wKbecgvaKBjbwJmZAvzBxfsCo");
 
             while (true)

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RewardingRentals.Utilities;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -28,7 +29,7 @@ namespace Server
 
         private DeliveryManager()
         {
-            RentableBots = new Dictionary<string, long>();
+            RentableBots = SettingsFile.Instance.RentableBots;
             if (!File.Exists(m_absoluteSavePath))
             {
                 File.Create(m_absoluteSavePath);
@@ -37,7 +38,7 @@ namespace Server
         }
 
         public string SaveFileName => @"DeliveryManager.sv";
-        private string m_absoluteSavePath => Path.Combine(Assembly.GetExecutingAssembly() + SaveFileName);
+        private string m_absoluteSavePath => Path.Combine(Assembly.GetExecutingAssembly().Location + Path.DirectorySeparatorChar + SaveFileName);
 
         public void Save()
         {

@@ -40,7 +40,7 @@ namespace RewardingRentals.Server
         }
 
         public string SaveFileName => @"ScheduleManager.sv";
-        private string m_absoluteSavePath => Path.Combine(Assembly.GetExecutingAssembly() + SaveFileName);
+        private string m_absoluteSavePath => Path.Combine(Assembly.GetExecutingAssembly().Location + Path.DirectorySeparatorChar + SaveFileName);
 
         /// <summary>
         /// DateTime should be the delivery time

@@ -67,9 +67,9 @@ namespace RewardingRentals.Server
         [Command("testOpenToolTab")]
         //This will allow supports to schedule with the bot
         [RequireUserPermission(ChannelPermission.ManageRoles)]
-        public async Task TestOpenToolTab(long number)
+        public async Task TestOpenToolTab()
         {
-            await DeliveryManager.Instance.GoToToolsPage();
+            await DeliveryManager.Instance.GetToBurnerPage();
         }
 
 

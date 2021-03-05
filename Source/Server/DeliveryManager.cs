@@ -55,16 +55,19 @@ namespace Server
             }
         }
 
-        public async Task GoToToolsPage()
+        public async Task GetToBurnerPage()
         {
             MousePoint toolButtonCoords = new MousePoint(437, 525);
             await LeftClick(toolButtonCoords);
+
+            MousePoint burnerTab = new MousePoint(950, 190);
+            await LeftClick(burnerTab);
         }
 
         public async Task<string> GetBotKey(long number)
         {
             MousePoint toolsButtonCoords = new MousePoint(437, 349);
-            await GoToToolsPage();
+            await GetToBurnerPage();
             Dictionary<long, MousePoint> openBotButtonMap = new Dictionary<long, MousePoint>();
             openBotButtonMap.Add(1, new MousePoint(930, 390));
             openBotButtonMap.Add(2, new MousePoint(1150, 390));

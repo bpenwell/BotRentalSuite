@@ -19,12 +19,12 @@ namespace Utilities
         public async Task GetToBurnerPage()
         {
             MousePoint toolButtonCoords = new MousePoint(437, 525);
-            m_inputSimulator.Mouse.MoveMouseToPositionOnVirtualDesktop(toolButtonCoords.X, toolButtonCoords.Y);
+            m_inputSimulator.Mouse.MoveMouseTo(toolButtonCoords.X, toolButtonCoords.Y);
             m_inputSimulator.Mouse.LeftButtonClick();
             await Task.Delay(TimeSpan.FromSeconds(5));
 
             MousePoint burnerTab = new MousePoint(950, 190);
-            m_inputSimulator.Mouse.MoveMouseToPositionOnVirtualDesktop(burnerTab.X, burnerTab.Y);
+            m_inputSimulator.Mouse.MoveMouseTo(burnerTab.X, burnerTab.Y);
             m_inputSimulator.Mouse.LeftButtonClick();
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
@@ -56,7 +56,7 @@ namespace Utilities
             }
 
             var buttonCoord = openBotButtonMap[number];
-            m_inputSimulator.Mouse.MoveMouseToPositionOnVirtualDesktop(buttonCoord.X, buttonCoord.Y);
+            m_inputSimulator.Mouse.MoveMouseTo(buttonCoord.X, buttonCoord.Y);
             m_inputSimulator.Mouse.LeftButtonClick();
             await Task.Delay(TimeSpan.FromSeconds(30));
         }
@@ -64,12 +64,12 @@ namespace Utilities
         public async Task GoToDM()
         {
             MousePoint dmButton = new MousePoint(50, 75);
-            m_inputSimulator.Mouse.MoveMouseToPositionOnVirtualDesktop(dmButton.X, dmButton.Y);
+            m_inputSimulator.Mouse.MoveMouseTo(dmButton.X, dmButton.Y);
             m_inputSimulator.Mouse.LeftButtonClick();
             await Task.Delay(TimeSpan.FromSeconds(5));
 
             MousePoint latestMessageButton = new MousePoint(210, 280);
-            m_inputSimulator.Mouse.MoveMouseToPositionOnVirtualDesktop(latestMessageButton.X, latestMessageButton.Y);
+            m_inputSimulator.Mouse.MoveMouseTo(latestMessageButton.X, latestMessageButton.Y);
             m_inputSimulator.Mouse.LeftButtonClick();
             await Task.Delay(TimeSpan.FromSeconds(2));
         }
@@ -77,7 +77,7 @@ namespace Utilities
         public async Task CopyLatestKey()
         {
             MousePoint copy = new MousePoint(460, 680);
-            m_inputSimulator.Mouse.MoveMouseToPositionOnVirtualDesktop(copy.X, copy.Y);
+            m_inputSimulator.Mouse.MoveMouseTo(copy.X, copy.Y);
             m_inputSimulator.Mouse.LeftButtonClick();
             m_inputSimulator.Mouse.LeftButtonDoubleClick();
             await Task.Delay(TimeSpan.FromSeconds(2));
@@ -86,7 +86,7 @@ namespace Utilities
             await Task.Delay(TimeSpan.FromSeconds(1));
 
             //MousePoint messageZone = new MousePoint(430, 730);
-            //m_inputSimulator.Mouse.MoveMouseToPositionOnVirtualDesktop(messageZone.X, messageZone.Y);
+            //m_inputSimulator.Mouse.MoveMouseTo(messageZone.X, messageZone.Y);
             //m_inputSimulator.Mouse.LeftButtonClick();
             //await Task.Delay(TimeSpan.FromSeconds(1));
 
@@ -95,7 +95,7 @@ namespace Utilities
         public async Task PasteAndSendMessage()
         {
             MousePoint paste = new MousePoint(440, 720);
-            m_inputSimulator.Mouse.MoveMouseToPositionOnVirtualDesktop(paste.X, paste.Y);
+            m_inputSimulator.Mouse.MoveMouseTo(paste.X, paste.Y);
             m_inputSimulator.Keyboard.KeyPress(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_V);
             await Task.Delay(TimeSpan.FromSeconds(1));
             m_inputSimulator.Keyboard.KeyPress(VirtualKeyCode.RETURN);

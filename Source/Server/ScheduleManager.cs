@@ -34,13 +34,14 @@ namespace RewardingRentals.Server
             m_deliveredRentals = new SortedList<DateTime, RentalInformation>();
             if (!File.Exists(m_absoluteSavePath))
             {
+                Console.WriteLine($"Created {m_absoluteSavePath}");
                 File.Create(m_absoluteSavePath);
                 return;
             }
         }
 
         public string SaveFileName => @"ScheduleManager.sv";
-        private string m_absoluteSavePath => Path.Combine(Assembly.GetExecutingAssembly().Location + Path.DirectorySeparatorChar + SaveFileName);
+        private string m_absoluteSavePath => Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + Path.DirectorySeparatorChar + SaveFileName;
 
         /// <summary>
         /// DateTime should be the delivery time
@@ -56,6 +57,7 @@ namespace RewardingRentals.Server
         {
             File.Delete(m_absoluteSavePath);
 
+            Console.WriteLine($"Saved latest {m_absoluteSavePath}");
             using (FileStream fileStream = File.OpenWrite(m_absoluteSavePath))
             {
                 //Output currently scheduled stuff
@@ -146,6 +148,7 @@ namespace RewardingRentals.Server
             lock (m_undeliveredRentals)
             {
                 rentalInformation = m_undeliveredRentals.Values[0];
+                m_deliveredRentals.Add(rentalInformation.DeliveryTime, rentalInformation);
                 m_undeliveredRentals.RemoveAt(0);
             }
 

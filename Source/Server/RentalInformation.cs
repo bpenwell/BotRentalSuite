@@ -31,15 +31,15 @@ namespace Server
         /// <returns></returns>
         public bool IsTheSameDrop(RentalInformation comparableRental)
         {
-            bool retValue = true;
+            bool retValue = false;
             if (Region == comparableRental.Region)
             {
-                return false;
+                return true;
             }
 
             if (BotName == comparableRental.BotName)
             {
-                return false;
+                return true;
             }
 
             retValue &= DeliveryTime.DayOfYear == comparableRental.DeliveryTime.DayOfYear;

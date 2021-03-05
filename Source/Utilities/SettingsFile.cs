@@ -11,7 +11,7 @@ namespace RewardingRentals.Utilities
 {
     public class SettingsFile
     {
-        public static SettingsFile Instance => new SettingsFile();
+        public static SettingsFile Instance { get; } = new SettingsFile();
 
         public string FileName = "Settings.txt";
 

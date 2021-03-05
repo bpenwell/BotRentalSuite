@@ -41,8 +41,7 @@ namespace RewardingRentals.Server
 
             if (result.Code == ResultEnum.Unavailable)
             {
-                var reason = "U suck kid";
-                await ReplyAsync($"Scheduling failed for the following reason: {reason}");
+                await ReplyAsync($"Scheduling failed for the following reason: {result.Result}");
                 return;
             }
 

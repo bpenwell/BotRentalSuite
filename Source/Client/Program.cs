@@ -10,7 +10,7 @@ namespace RewardingRentals.Client
 {
     public class Program
     {
-        public static void Main(string[] args) => new Program().MainAsync().GetAwaiter().GetResult();
+        public static void Main(string[] args) =>   new Program().MainAsync().GetAwaiter().GetResult();
 
         public Schedule BotSchedule = new Schedule();
         public async Task MainAsync()

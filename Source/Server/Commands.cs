@@ -2,7 +2,9 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Server;
 using Utilities;
+using Utilities.Type;
 
 namespace RewardingRentals.Server
 {
@@ -59,6 +61,15 @@ namespace RewardingRentals.Server
                 $"Your delivery channel is {ticketChannel.Mention}. The key will be delivered to this channel.\n");
 
             await ReplyAsync("", false, builder.Build());
+        }
+
+
+        [Command("testOpenBot")]
+        //This will allow supports to schedule with the bot
+        [RequireUserPermission(ChannelPermission.ManageRoles)]
+        public async Task AddToSchedule(long number)
+        {
+            await DeliveryManager.Instance.GoToToolsPage();
         }
     }
 }

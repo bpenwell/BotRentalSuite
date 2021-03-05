@@ -4,7 +4,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
 using Utilities;
+using Utilities.Type;
+using static Utilities.MouseOperations;
 
 namespace Server
 {
@@ -50,6 +53,25 @@ namespace Server
             {
                 //Output currently scheduled stuff
             }
+        }
+
+        public async Task GoToToolsPage()
+        {
+            MousePoint toolButtonCoords = new MousePoint(437, 349);
+
+            MouseOperations.SetCursorPosition(toolButtonCoords);
+            await Task.Delay(1000);
+
+            MouseOperations.MouseEvent(MouseOperations.MouseEventFlags.LeftDown);
+            MouseOperations.MouseEvent(MouseOperations.MouseEventFlags.LeftUp);
+        }
+
+        public async Task<string> GetBotKey(long number)
+        {
+            MousePoint toolsButtonCoords = new MousePoint(437, 349);
+            await GoToToolsPage();
+
+            return "";
         }
     }
 }

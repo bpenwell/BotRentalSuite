@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using Utilities.Type;
 using WindowsInput;
 using WindowsInput.Native;
@@ -89,7 +90,7 @@ namespace Utilities
             m_inputSimulator.Mouse.LeftButtonDoubleClick();
             await Task.Delay(TimeSpan.FromSeconds(2));
 
-            m_inputSimulator.Keyboard.KeyPress(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_C);
+            m_inputSimulator.Keyboard.ModifiedKeyStroke(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_C);
             m_inputSimulator.Mouse.Sleep(100);
             await Task.Delay(TimeSpan.FromSeconds(1));
 
@@ -105,11 +106,20 @@ namespace Utilities
             MousePoint paste = new MousePoint(440, 720);
             m_inputSimulator.Mouse.MoveMouseTo(paste.X, paste.Y);
             m_inputSimulator.Mouse.Sleep(100);
-            m_inputSimulator.Keyboard.KeyPress(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_V);
+
+            var key = Clipboard.GetText();
             await Task.Delay(TimeSpan.FromSeconds(1));
+            m_inputSimulator.Keyboard.TextEntry(key);
+            m_inputSimulator.Mouse.Sleep(100);
             m_inputSimulator.Keyboard.KeyPress(VirtualKeyCode.RETURN);
             m_inputSimulator.Mouse.Sleep(100);
             await Task.Delay(TimeSpan.FromSeconds(1));
+        }
+
+        public async Task<string> GetNewKeyValue()
+        {
+            await Task.Delay(TimeSpan.FromSeconds(1));
+            return Clipboard.GetText();
         }
     }
 }

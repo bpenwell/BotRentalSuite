@@ -10,6 +10,8 @@ namespace Server
         public DateTime CompletionTime;
         public DateTime ChannelDeletionTime;
 
+        public List<long> InternalKeyNumbers;
+
         public bool IsDurationRental = false;
         public long Quantity;
         public decimal RentalPrice;
@@ -21,7 +23,7 @@ namespace Server
 
         public RentalInformation()
         {
-
+            InternalKeyNumbers = new List<long>();
         }
 
         /// <summary>

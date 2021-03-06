@@ -57,7 +57,7 @@ namespace RewardingRentals.Server
             await m_client.StartAsync();
         }
 
-        public async Task DeliverKeyAndDie(string key, string channelName)
+        public async Task DeliverKey(string key, string channelName)
         {
             await Task.Delay(TimeSpan.FromSeconds(5));
             var channels = m_client.GetGuild(m_serverId).TextChannels;

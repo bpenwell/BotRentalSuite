@@ -15,7 +15,7 @@ namespace RewardingRentals.Server
             {
                 var keyInfo = await ScheduleManager.Instance.DeliverNextKey();
                 var discordConnection = DiscordConnection.Instance;
-                await discordConnection.DeliverKeyAndDie(keyInfo.Key, keyInfo.ChannelName);
+                await discordConnection.DeliverKey(keyInfo.Key, keyInfo.ChannelName);
             }
             Console.WriteLine(DateTime.Now);
         }

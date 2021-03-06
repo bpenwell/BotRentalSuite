@@ -57,7 +57,7 @@ namespace RewardingRentals.Server
             EmbedBuilder builder = new EmbedBuilder();
             builder.WithTitle("Scheduler")
                 .AddField("Success",
-                $"{builder.Author} scheduled you to rent {quantity} {botName} for the {region} region!\n" +
+                $"You've been scheduled to rent {quantity} {botName} for the {region} region.\n" +
                 $"Your delivery channel is {ticketChannel.Mention}. The key will be delivered to this channel.\n");
 
             await ReplyAsync("", false, builder.Build());
@@ -73,12 +73,19 @@ namespace RewardingRentals.Server
         }
 
 
-        [Command("testOpenBot")]
+        [Command("deliver")]
         //This will allow supports to schedule with the bot
         [RequireUserPermission(ChannelPermission.ManageRoles)]
         public async Task TestOpenBot(long number)
         {
             await DeliveryManager.Instance.GetBotKey(number);
+        }
+
+
+        [Command("register")]
+        public async Task RegisterKey(long number, string key)
+        {
+            await DeliveryManager.Instance.RegisterNewKey(number, key);
         }
     }
 }

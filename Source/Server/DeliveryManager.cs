@@ -20,6 +20,8 @@ namespace Server
         /// </summary>
         public Dictionary<string, long> RentableBots;
 
+        public Dictionary<long, string> RegisteredKeys;
+
         public long MaximumBotKeys(string botName)
         {
             if (!RentableBots.TryGetValue(botName, out var keys))
@@ -32,6 +34,7 @@ namespace Server
 
         private DeliveryManager()
         {
+            RegisteredKeys = new Dictionary<long, string>();
             RentableBots = SettingsFile.Instance.RentableBots;
             if (!File.Exists(m_absoluteSavePath))
             {
@@ -64,7 +67,7 @@ namespace Server
             await LeftClick(burnerTab);
         }
 
-        public async Task<string> GetBotKey(long number)
+        public async Task GetBotKey(long number)
         {
             var handler = new InteractionHandler();
             await handler.LoginToAccount(number);
@@ -77,9 +80,17 @@ namespace Server
             await handler.RegisterNewKeyToBot(number);
 
             await Task.Delay(TimeSpan.FromSeconds(5));
+        }
 
-            //Get new key
-            return "";
+        public async Task RegisterNewKey(long number, string key)
+        {
+            if (RegisteredKeys.ContainsKey(number) || RegisteredKeys.ContainsValue(key))
+            {
+                throw new Exception("Registering new key broke.");
+            }
+
+            RegisteredKeys.Add(number, key);
+            await Task.CompletedTask;
         }
     }
 }

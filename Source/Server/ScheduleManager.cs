@@ -82,6 +82,13 @@ namespace RewardingRentals.Server
                 RentalPrice = totalPrice
             };
 
+            var maxKeysOwned = DeliveryManager.Instance.MaximumBotKeys(newRental.BotName);
+            var availableKeyMap = new List<bool>();
+            for (var index = 0; index < maxKeysOwned; index++)
+            {
+                availableKeyMap.Add(true);
+            }
+
             //First check undelivered rentals
             long copiesAlreadyTaken = 0;
             foreach (var rentalKVP in m_undeliveredRentals)
@@ -90,6 +97,11 @@ namespace RewardingRentals.Server
                 if (newRental.IsTheSameDrop(rental))
                 {
                     copiesAlreadyTaken += rental.Quantity;
+
+                    foreach (var key in rental.InternalKeyNumbers)
+                    {
+                        availableKeyMap[Convert.ToInt32(key - 1)] = false;
+                    }
                 }
             }
 
@@ -100,10 +112,14 @@ namespace RewardingRentals.Server
                 if (newRental.IsTheSameDrop(rental))
                 {
                     copiesAlreadyTaken += rental.Quantity;
+
+                    foreach (var key in rental.InternalKeyNumbers)
+                    {
+                        availableKeyMap[Convert.ToInt32(key - 1)] = false;
+                    }
                 }
             }
 
-            var maxKeysOwned = DeliveryManager.Instance.MaximumBotKeys(newRental.BotName);
             if (copiesAlreadyTaken > maxKeysOwned)
             {
                 throw new Exception("Congrats on breaking the system. Somehow, more copies are already taken than are available.");
@@ -129,6 +145,25 @@ namespace RewardingRentals.Server
                     //Customize display to show delivery time in their regional time.
                     schedulerResult.Result = $"Success! We have added you to the schedule. Expect key delivery at {newRental.DeliveryTime.ToLongDateString()} {newRental.DeliveryTime.ToLongTimeString()}!";
 
+                    var keysWanted = newRental.Quantity;
+                    var keyNumber = 1;
+                    foreach (var key in availableKeyMap)
+                    {
+                        if (keysWanted == 0)
+                        {
+                            break;
+                        }
+
+                        //Key is available
+                        if (key)
+                        {
+                            newRental.InternalKeyNumbers.Add(keyNumber);
+                            keysWanted--;
+                        }
+
+                        keyNumber++;
+                    }
+
                     //Only add when successful
                     m_undeliveredRentals.Add(newRental.DeliveryTime, newRental);
                 }
@@ -139,22 +174,39 @@ namespace RewardingRentals.Server
 
         public bool NeedToDeliverKeys()
         {
-            return m_undeliveredRentals.Count != 0;
+            var deliveriesNeeded = m_undeliveredRentals.Count != 0;
+            var keysAvailable = DeliveryManager.Instance.RegisteredKeys.Count != 0;
+
+            return deliveriesNeeded && keysAvailable;
         }
 
         public async Task<RentalInformation> DeliverNextKey()
         {
-            RentalInformation rentalInformation;
+            RentalInformation rentalInformation = new RentalInformation();
             lock (m_undeliveredRentals)
             {
-                rentalInformation = m_undeliveredRentals.Values[0];
+                var currentAvailableKeys = DeliveryManager.Instance.RegisteredKeys;
+                foreach (var deliveryKVP in m_undeliveredRentals)
+                {
+                    var deliveryInfo = deliveryKVP.Value;
+
+                    foreach (var undeliveredBotNumber in deliveryInfo.InternalKeyNumbers)
+                    {
+                        if (currentAvailableKeys.ContainsKey(undeliveredBotNumber))
+                        {
+                            var key = currentAvailableKeys[undeliveredBotNumber];
+                            rentalInformation = deliveryInfo;
+                            rentalInformation.Key = key;
+                            DeliveryManager.Instance.RegisteredKeys.Remove(undeliveredBotNumber);
+                            break;
+                        }
+                    }
+                }
                 m_deliveredRentals.Add(rentalInformation.DeliveryTime, rentalInformation);
                 m_undeliveredRentals.RemoveAt(0);
             }
 
             await Task.Delay(1000);
-
-            rentalInformation.Key = "KeYyYyY";
 
             return rentalInformation;
         }

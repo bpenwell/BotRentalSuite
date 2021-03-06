@@ -11,8 +11,11 @@ namespace Utilities
     {
         private InputSimulator m_inputSimulator;
 
+        private int m_standardInputMSDelay;
+
         public InteractionHandler()
         {
+            m_standardInputMSDelay = 250;
             m_inputSimulator = new InputSimulator();
         }
 
@@ -20,14 +23,14 @@ namespace Utilities
         {
             MousePoint toolButtonCoords = new MousePoint(437, 525);
             m_inputSimulator.Mouse.MoveMouseTo(toolButtonCoords.X, toolButtonCoords.Y);
-            m_inputSimulator.Mouse.Sleep(100);
+            m_inputSimulator.Mouse.Sleep(m_standardInputMSDelay);
             m_inputSimulator.Mouse.LeftButtonClick();
-            m_inputSimulator.Mouse.Sleep(100);
+            m_inputSimulator.Mouse.Sleep(m_standardInputMSDelay);
             await Task.Delay(TimeSpan.FromSeconds(5));
 
             MousePoint burnerTab = new MousePoint(950, 190);
             m_inputSimulator.Mouse.MoveMouseTo(burnerTab.X, burnerTab.Y);
-            m_inputSimulator.Mouse.Sleep(100);
+            m_inputSimulator.Mouse.Sleep(m_standardInputMSDelay);
             m_inputSimulator.Mouse.LeftButtonClick();
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
@@ -60,7 +63,7 @@ namespace Utilities
 
             var buttonCoord = openBotButtonMap[number];
             m_inputSimulator.Mouse.MoveMouseTo(buttonCoord.X, buttonCoord.Y);
-            m_inputSimulator.Mouse.Sleep(100);
+            m_inputSimulator.Mouse.Sleep(m_standardInputMSDelay);
             m_inputSimulator.Mouse.LeftButtonClick();
             await Task.Delay(TimeSpan.FromSeconds(30));
         }
@@ -69,7 +72,7 @@ namespace Utilities
         {
             MousePoint dmButton = new MousePoint(50, 75);
             m_inputSimulator.Mouse.MoveMouseTo(dmButton.X, dmButton.Y);
-            m_inputSimulator.Mouse.Sleep(100);
+            m_inputSimulator.Mouse.Sleep(m_standardInputMSDelay);
             m_inputSimulator.Mouse.LeftButtonClick();
             await Task.Delay(TimeSpan.FromSeconds(5));
         }
@@ -78,29 +81,29 @@ namespace Utilities
         {
             await CopyLastMessage();
             m_inputSimulator.Keyboard.ModifiedKeyStroke(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_C);
-            m_inputSimulator.Mouse.Sleep(100);
+            m_inputSimulator.Mouse.Sleep(m_standardInputMSDelay);
             await Task.Delay(TimeSpan.FromSeconds(1));
 
-            MousePoint paste = new MousePoint(460, 720);
-            m_inputSimulator.Mouse.MoveMouseTo(paste.X, paste.Y);
-            m_inputSimulator.Mouse.Sleep(100);
+            MousePoint messageLocation = new MousePoint(460, 720);
+            m_inputSimulator.Mouse.MoveMouseTo(messageLocation.X, messageLocation.Y);
+            m_inputSimulator.Mouse.Sleep(m_standardInputMSDelay);
 
             await Task.Delay(TimeSpan.FromSeconds(1));
-            m_inputSimulator.Mouse.Sleep(100);
+            m_inputSimulator.Mouse.Sleep(m_standardInputMSDelay);
             m_inputSimulator.Keyboard.TextEntry(messagePrefix);
-            m_inputSimulator.Mouse.Sleep(100);
+            m_inputSimulator.Mouse.Sleep(m_standardInputMSDelay);
             m_inputSimulator.Keyboard.ModifiedKeyStroke(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_V);
-            m_inputSimulator.Mouse.Sleep(100);
+            m_inputSimulator.Mouse.Sleep(m_standardInputMSDelay);
             m_inputSimulator.Keyboard.KeyPress(VirtualKeyCode.RETURN);
-            m_inputSimulator.Mouse.Sleep(100);
+            m_inputSimulator.Mouse.Sleep(m_standardInputMSDelay);
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
 
         public async Task CopyLastMessage()
         {
-            MousePoint copy = new MousePoint(460, 680);
-            m_inputSimulator.Mouse.MoveMouseTo(copy.X, copy.Y);
-            m_inputSimulator.Mouse.Sleep(100);
+            MousePoint lastMessage = new MousePoint(460, 680);
+            m_inputSimulator.Mouse.MoveMouseTo(lastMessage.X, lastMessage.Y);
+            m_inputSimulator.Mouse.Sleep(m_standardInputMSDelay);
             m_inputSimulator.Mouse.LeftButtonClick();
             m_inputSimulator.Mouse.LeftButtonDoubleClick();
             await Task.Delay(TimeSpan.FromSeconds(2));
@@ -108,33 +111,34 @@ namespace Utilities
 
         public async Task RegisterNewKeyToBot(long botNumber)
         {
-            await CopyLastMessage();
             await Task.Delay(TimeSpan.FromSeconds(1));
 
-            MousePoint paste = new MousePoint(440, 720);
-            m_inputSimulator.Mouse.MoveMouseTo(paste.X, paste.Y);
-            m_inputSimulator.Mouse.Sleep(100);
+            MousePoint messageLocation = new MousePoint(460, 720);
+            m_inputSimulator.Mouse.MoveMouseTo(messageLocation.X, messageLocation.Y);
+            m_inputSimulator.Mouse.Sleep(m_standardInputMSDelay);
 
             await Task.Delay(TimeSpan.FromSeconds(1));
-            m_inputSimulator.Mouse.Sleep(100);
+            m_inputSimulator.Mouse.Sleep(m_standardInputMSDelay);
             m_inputSimulator.Keyboard.TextEntry($"rental!register {botNumber} ");
-            m_inputSimulator.Mouse.Sleep(100);
+            m_inputSimulator.Mouse.Sleep(m_standardInputMSDelay);
             m_inputSimulator.Keyboard.ModifiedKeyStroke(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_V);
-            m_inputSimulator.Mouse.Sleep(100);
+            m_inputSimulator.Mouse.Sleep(m_standardInputMSDelay);
             m_inputSimulator.Keyboard.KeyPress(VirtualKeyCode.RETURN);
-            m_inputSimulator.Mouse.Sleep(100);
+            m_inputSimulator.Mouse.Sleep(m_standardInputMSDelay);
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
 
         public async Task GoToUserDM(string user)
         {
             //Search for the bot in DMs
-            MousePoint searchButton = new MousePoint(150, 100);
+            MousePoint searchButton = new MousePoint(150, m_standardInputMSDelay);
             m_inputSimulator.Mouse.MoveMouseTo(searchButton.X, searchButton.Y);
-            m_inputSimulator.Mouse.Sleep(100);
+            m_inputSimulator.Mouse.Sleep(m_standardInputMSDelay);
             m_inputSimulator.Mouse.LeftButtonClick();
+            m_inputSimulator.Mouse.Sleep(m_standardInputMSDelay);
             m_inputSimulator.Keyboard.TextEntry(user);
             await Task.Delay(TimeSpan.FromSeconds(1));
+            m_inputSimulator.Mouse.Sleep(m_standardInputMSDelay);
             m_inputSimulator.Keyboard.KeyPress(VirtualKeyCode.RETURN);
             await Task.Delay(TimeSpan.FromSeconds(1));
         }

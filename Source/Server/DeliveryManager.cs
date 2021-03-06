@@ -78,6 +78,7 @@ namespace Server
             await handler.CopyLastMessage();
             await handler.GoToUserDM("Rewarding Rentals#9446");
             await handler.RegisterNewKeyToBot(number);
+            await handler.CloseBurner();
 
             await Task.Delay(TimeSpan.FromSeconds(5));
         }

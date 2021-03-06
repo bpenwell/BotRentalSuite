@@ -128,10 +128,19 @@ namespace Utilities
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
 
+        public async Task CloseBurner()
+        {
+            MousePoint closeButton = new MousePoint(1340, 25);
+            m_inputSimulator.Mouse.MoveMouseTo(closeButton.X, closeButton.Y);
+            m_inputSimulator.Mouse.Sleep(m_standardInputMSDelay);
+            m_inputSimulator.Mouse.LeftButtonClick();
+            await Task.Delay(TimeSpan.FromSeconds(1));
+        }
+
         public async Task GoToUserDM(string user)
         {
             //Search for the bot in DMs
-            MousePoint searchButton = new MousePoint(150, m_standardInputMSDelay);
+            MousePoint searchButton = new MousePoint(150, 100);
             m_inputSimulator.Mouse.MoveMouseTo(searchButton.X, searchButton.Y);
             m_inputSimulator.Mouse.Sleep(m_standardInputMSDelay);
             m_inputSimulator.Mouse.LeftButtonClick();

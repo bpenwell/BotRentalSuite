@@ -103,7 +103,6 @@ namespace RewardingRentals.Server
         public async Task HandleCommandAsync(SocketMessage arg)
         {
             var message = arg as SocketUserMessage;
-
             if (message.Author.IsBot)
             {
                 return;

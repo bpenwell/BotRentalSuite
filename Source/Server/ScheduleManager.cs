@@ -180,35 +180,30 @@ namespace RewardingRentals.Server
             return deliveriesNeeded && keysAvailable;
         }
 
-        public async Task<RentalInformation> DeliverNextKey()
+        public RentalInformation DeliverNextKey()
         {
-            RentalInformation rentalInformation = new RentalInformation();
-            lock (m_undeliveredRentals)
+            var currentAvailableKeys = DeliveryManager.Instance.RegisteredKeys;
+            foreach (var deliveryKVP in m_undeliveredRentals)
             {
-                var currentAvailableKeys = DeliveryManager.Instance.RegisteredKeys;
-                foreach (var deliveryKVP in m_undeliveredRentals)
-                {
-                    var deliveryInfo = deliveryKVP.Value;
+                var deliveryInfo = deliveryKVP.Value;
 
-                    foreach (var undeliveredBotNumber in deliveryInfo.InternalKeyNumbers)
+                foreach (var undeliveredBotNumber in deliveryInfo.InternalKeyNumbers)
+                {
+                    if (currentAvailableKeys.ContainsKey(undeliveredBotNumber))
                     {
-                        if (currentAvailableKeys.ContainsKey(undeliveredBotNumber))
-                        {
-                            var key = currentAvailableKeys[undeliveredBotNumber];
-                            rentalInformation = deliveryInfo;
-                            rentalInformation.Key = key;
-                            DeliveryManager.Instance.RegisteredKeys.Remove(undeliveredBotNumber);
-                            break;
-                        }
+                        RentalInformation rentalInformation = deliveryInfo;
+                        var key = currentAvailableKeys[undeliveredBotNumber];
+                        rentalInformation.Key = key;
+                        DeliveryManager.Instance.RegisteredKeys.Remove(undeliveredBotNumber);
+
+                        m_deliveredRentals.Add(rentalInformation.DeliveryTime, rentalInformation);
+                        m_undeliveredRentals.RemoveAt(0);
+                        return rentalInformation;
                     }
                 }
-                m_deliveredRentals.Add(rentalInformation.DeliveryTime, rentalInformation);
-                m_undeliveredRentals.RemoveAt(0);
             }
 
-            await Task.Delay(1000);
-
-            return rentalInformation;
+            throw new Exception("Couldn't deliver next key");
         }
     }
 }

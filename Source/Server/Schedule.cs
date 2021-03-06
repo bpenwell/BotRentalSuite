@@ -13,7 +13,7 @@ namespace RewardingRentals.Server
         {
             if (ScheduleManager.Instance.NeedToDeliverKeys())
             {
-                var keyInfo = await ScheduleManager.Instance.DeliverNextKey();
+                var keyInfo = ScheduleManager.Instance.DeliverNextKey();
                 var discordConnection = DiscordConnection.Instance;
                 await discordConnection.DeliverKey(keyInfo.Key, keyInfo.ChannelName);
             }

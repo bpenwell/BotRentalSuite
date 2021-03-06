@@ -79,11 +79,9 @@ namespace Server
             await handler.GoToUserDM("Rewarding Rentals#9446");
             await handler.RegisterNewKeyToBot(number);
             await handler.CloseBurner();
-
-            await Task.Delay(TimeSpan.FromSeconds(5));
         }
 
-        public async Task RegisterNewKey(long number, string key)
+        public void RegisterNewKey(long number, string key)
         {
             if (RegisteredKeys.ContainsKey(number) || RegisteredKeys.ContainsValue(key))
             {
@@ -91,7 +89,6 @@ namespace Server
             }
 
             RegisteredKeys.Add(number, key);
-            await Task.CompletedTask;
         }
     }
 }

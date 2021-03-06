@@ -76,7 +76,7 @@ namespace RewardingRentals.Server
         [Command("deliver")]
         //This will allow supports to schedule with the bot
         [RequireUserPermission(ChannelPermission.ManageRoles)]
-        public async Task TestOpenBot(long number)
+        public async Task Deliver(long number)
         {
             await DeliveryManager.Instance.GetBotKey(number);
         }
@@ -85,7 +85,8 @@ namespace RewardingRentals.Server
         [Command("register")]
         public async Task RegisterKey(long number, string key)
         {
-            await DeliveryManager.Instance.RegisterNewKey(number, key);
+            DeliveryManager.Instance.RegisterNewKey(number, key);
+            await Task.CompletedTask;
         }
     }
 }

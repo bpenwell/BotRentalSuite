@@ -81,7 +81,7 @@ namespace Utilities
             m_inputSimulator.Mouse.Sleep(100);
             await Task.Delay(TimeSpan.FromSeconds(1));
 
-            MousePoint paste = new MousePoint(440, 720);
+            MousePoint paste = new MousePoint(460, 720);
             m_inputSimulator.Mouse.MoveMouseTo(paste.X, paste.Y);
             m_inputSimulator.Mouse.Sleep(100);
 
@@ -129,7 +129,7 @@ namespace Utilities
         public async Task GoToUserDM(string user)
         {
             //Search for the bot in DMs
-            MousePoint searchButton = new MousePoint(130, 125);
+            MousePoint searchButton = new MousePoint(150, 100);
             m_inputSimulator.Mouse.MoveMouseTo(searchButton.X, searchButton.Y);
             m_inputSimulator.Mouse.Sleep(100);
             m_inputSimulator.Mouse.LeftButtonClick();

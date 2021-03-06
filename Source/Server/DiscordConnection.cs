@@ -57,7 +57,7 @@ namespace RewardingRentals.Server
             await m_client.StartAsync();
         }
 
-        public async Task DeliverKey(string key, string channelName)
+        public void DeliverKey(string key, string channelName)
         {
             var channels = m_client.GetGuild(m_serverId).TextChannels;
             var applicableChannel = channels.SingleOrDefault(c => c.Name == channelName);
@@ -65,7 +65,7 @@ namespace RewardingRentals.Server
             builder.WithTitle("Delivery Time!")
                 .AddField($"Key",
                 $"{key}\n");
-            await applicableChannel.SendMessageAsync("", false, builder.Build());
+            applicableChannel.SendMessageAsync("", false, builder.Build());
         }
 
         private Task BotConnected()

@@ -37,7 +37,7 @@ namespace RewardingRentals.Client
 
         public async Task Update()
         {
-            await BotSchedule.Update();
+            BotSchedule.Update();
         }
     }
 }

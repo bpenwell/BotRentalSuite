@@ -9,13 +9,13 @@ namespace RewardingRentals.Server
         {
         }
 
-        public async Task Update()
+        public void Update()
         {
             if (ScheduleManager.Instance.NeedToDeliverKeys())
             {
                 var keyInfo = ScheduleManager.Instance.DeliverNextKey();
                 var discordConnection = DiscordConnection.Instance;
-                await discordConnection.DeliverKey(keyInfo.Key, keyInfo.ChannelName);
+                discordConnection.DeliverKey(keyInfo.Key, keyInfo.ChannelName);
             }
             Console.WriteLine(DateTime.Now);
         }

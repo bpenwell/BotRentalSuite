@@ -59,14 +59,13 @@ namespace RewardingRentals.Server
 
         public async Task DeliverKey(string key, string channelName)
         {
-            await Task.Delay(TimeSpan.FromSeconds(5));
+            await Task.Delay(TimeSpan.FromSeconds(1));
             var channels = m_client.GetGuild(m_serverId).TextChannels;
             var applicableChannel = channels.SingleOrDefault(c => c.Name == channelName);
             EmbedBuilder builder = new EmbedBuilder();
             builder.WithTitle("Delivery Time!")
-                .AddField("Your Key",
-                $"{key}\n" +
-                "Good luck on your drop!");
+                .AddField($"Key",
+                $"{key}\n");
             await applicableChannel.SendMessageAsync("", false, builder.Build());
         }
 

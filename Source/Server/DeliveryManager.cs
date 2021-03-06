@@ -68,9 +68,14 @@ namespace Server
         {
             var handler = new InteractionHandler();
             await handler.LoginToAccount(number);
-            await handler.GoToDM();
-            await handler.CopyLatestKey();
-            await handler.PasteAndSendMessage();
+            await handler.GoToDMsMenu();
+            await handler.GoToUserDM("TSB-Bot");
+            await handler.ResetKey("!reset ");
+            await Task.Delay(TimeSpan.FromSeconds(5));
+            await handler.CopyLastMessage();
+            await handler.GoToUserDM("Rewarding Rentals#9446");
+            await handler.RegisterNewKeyToBot(number);
+
             await Task.Delay(TimeSpan.FromSeconds(5));
 
             //Get new key

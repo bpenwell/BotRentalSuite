@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 using Utilities.Type;
 using WindowsInput;
 using WindowsInput.Native;
@@ -66,22 +65,38 @@ namespace Utilities
             await Task.Delay(TimeSpan.FromSeconds(30));
         }
 
-        public async Task GoToDM()
+        public async Task GoToDMsMenu()
         {
             MousePoint dmButton = new MousePoint(50, 75);
             m_inputSimulator.Mouse.MoveMouseTo(dmButton.X, dmButton.Y);
             m_inputSimulator.Mouse.Sleep(100);
             m_inputSimulator.Mouse.LeftButtonClick();
             await Task.Delay(TimeSpan.FromSeconds(5));
-
-            MousePoint latestMessageButton = new MousePoint(210, 280);
-            m_inputSimulator.Mouse.MoveMouseTo(latestMessageButton.X, latestMessageButton.Y);
-            m_inputSimulator.Mouse.Sleep(100);
-            m_inputSimulator.Mouse.LeftButtonClick();
-            await Task.Delay(TimeSpan.FromSeconds(2));
         }
 
-        public async Task CopyLatestKey()
+        public async Task ResetKey(string messagePrefix)
+        {
+            await CopyLastMessage();
+            m_inputSimulator.Keyboard.ModifiedKeyStroke(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_C);
+            m_inputSimulator.Mouse.Sleep(100);
+            await Task.Delay(TimeSpan.FromSeconds(1));
+
+            MousePoint paste = new MousePoint(440, 720);
+            m_inputSimulator.Mouse.MoveMouseTo(paste.X, paste.Y);
+            m_inputSimulator.Mouse.Sleep(100);
+
+            await Task.Delay(TimeSpan.FromSeconds(1));
+            m_inputSimulator.Mouse.Sleep(100);
+            m_inputSimulator.Keyboard.TextEntry(messagePrefix);
+            m_inputSimulator.Mouse.Sleep(100);
+            m_inputSimulator.Keyboard.ModifiedKeyStroke(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_V);
+            m_inputSimulator.Mouse.Sleep(100);
+            m_inputSimulator.Keyboard.KeyPress(VirtualKeyCode.RETURN);
+            m_inputSimulator.Mouse.Sleep(100);
+            await Task.Delay(TimeSpan.FromSeconds(1));
+        }
+
+        public async Task CopyLastMessage()
         {
             MousePoint copy = new MousePoint(460, 680);
             m_inputSimulator.Mouse.MoveMouseTo(copy.X, copy.Y);
@@ -89,37 +104,39 @@ namespace Utilities
             m_inputSimulator.Mouse.LeftButtonClick();
             m_inputSimulator.Mouse.LeftButtonDoubleClick();
             await Task.Delay(TimeSpan.FromSeconds(2));
-
-            m_inputSimulator.Keyboard.ModifiedKeyStroke(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_C);
-            m_inputSimulator.Mouse.Sleep(100);
-            await Task.Delay(TimeSpan.FromSeconds(1));
-
-            //MousePoint messageZone = new MousePoint(430, 730);
-            //m_inputSimulator.Mouse.MoveMouseTo(messageZone.X, messageZone.Y);
-            //m_inputSimulator.Mouse.LeftButtonClick();
-            //await Task.Delay(TimeSpan.FromSeconds(1));
-
         }
 
-        public async Task PasteAndSendMessage()
+        public async Task RegisterNewKeyToBot(long botNumber)
         {
+            await CopyLastMessage();
+            await Task.Delay(TimeSpan.FromSeconds(1));
+
             MousePoint paste = new MousePoint(440, 720);
             m_inputSimulator.Mouse.MoveMouseTo(paste.X, paste.Y);
             m_inputSimulator.Mouse.Sleep(100);
 
-            var key = Clipboard.GetText();
             await Task.Delay(TimeSpan.FromSeconds(1));
-            m_inputSimulator.Keyboard.TextEntry(key);
+            m_inputSimulator.Mouse.Sleep(100);
+            m_inputSimulator.Keyboard.TextEntry($"rental!register {botNumber} ");
+            m_inputSimulator.Mouse.Sleep(100);
+            m_inputSimulator.Keyboard.ModifiedKeyStroke(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_V);
             m_inputSimulator.Mouse.Sleep(100);
             m_inputSimulator.Keyboard.KeyPress(VirtualKeyCode.RETURN);
             m_inputSimulator.Mouse.Sleep(100);
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
 
-        public async Task<string> GetNewKeyValue()
+        public async Task GoToUserDM(string user)
         {
+            //Search for the bot in DMs
+            MousePoint searchButton = new MousePoint(130, 125);
+            m_inputSimulator.Mouse.MoveMouseTo(searchButton.X, searchButton.Y);
+            m_inputSimulator.Mouse.Sleep(100);
+            m_inputSimulator.Mouse.LeftButtonClick();
+            m_inputSimulator.Keyboard.TextEntry(user);
             await Task.Delay(TimeSpan.FromSeconds(1));
-            return Clipboard.GetText();
+            m_inputSimulator.Keyboard.KeyPress(VirtualKeyCode.RETURN);
+            await Task.Delay(TimeSpan.FromSeconds(1));
         }
     }
 }

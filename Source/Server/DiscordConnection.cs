@@ -59,7 +59,6 @@ namespace RewardingRentals.Server
 
         public async Task DeliverKey(string key, string channelName)
         {
-            await Task.Delay(TimeSpan.FromSeconds(1));
             var channels = m_client.GetGuild(m_serverId).TextChannels;
             var applicableChannel = channels.SingleOrDefault(c => c.Name == channelName);
             EmbedBuilder builder = new EmbedBuilder();

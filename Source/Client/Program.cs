@@ -24,7 +24,7 @@ namespace RewardingRentals.Client
             {
                 if (DiscordConnection.Instance.Connected)
                 {
-                    await Update();
+                    Update();
                 }
                 else
                 {
@@ -35,7 +35,7 @@ namespace RewardingRentals.Client
             }
         }
 
-        public async Task Update()
+        public void Update()
         {
             BotSchedule.Update();
         }

@@ -177,7 +177,22 @@ namespace RewardingRentals.Server
             var deliveriesNeeded = m_undeliveredRentals.Count != 0;
             var keysAvailable = DeliveryManager.Instance.RegisteredKeys.Count != 0;
 
-            return deliveriesNeeded && keysAvailable;
+            foreach (var deliveryKVP in m_undeliveredRentals)
+            {
+                var delivery = deliveryKVP.Value;
+                if (DateTime.Now > delivery.DeliveryTime)
+                {
+                    foreach (var keyNumber in delivery.InternalKeyNumbers)
+                    {
+                        if (DeliveryManager.Instance.RegisteredKeys.ContainsKey(keyNumber))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
         }
 
         public RentalInformation DeliverNextKey()

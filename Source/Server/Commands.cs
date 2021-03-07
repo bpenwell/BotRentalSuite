@@ -28,13 +28,19 @@ namespace RewardingRentals.Server
             await ReplyAsync("", false, builder.Build());
         }
 
-        [Command("schedule")]
+        [Command("rent")]
         //This will allow supports to schedule with the bot
         [RequireUserPermission(ChannelPermission.ManageRoles)]
         public async Task AddToSchedule(string botName, DateTime dropDate, long quantity, string region, string discordID, decimal totalPrice, string timeBeforeDrop)
         {
             var idParts = discordID.Split('!', '<', '>');
-            var serverUser = Context.Client.GetUser(Convert.ToUInt64(idParts[2]));
+            if (idParts.Length == 3)
+            {
+                throw new Exception("Cannot add a bot to the rentals schedule");
+            }
+
+            var id = idParts[2];
+            var serverUser = Context.Client.GetUser(Convert.ToUInt64(id));
             var user = serverUser.Username;
             var ticketChannelName = AppHelpers.GetNextTicketName(user, botName).ToLower();
 

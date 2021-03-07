@@ -113,7 +113,7 @@ namespace RewardingRentals.Server
                 var result = await m_commands.ExecuteAsync(context, argPos, m_services);
                 if (!result.IsSuccess)
                 {
-                    var errorMessage = "Error Message:```" + result.ErrorReason + "```" + "\n**Type rental!help for more information about commands.**\n";
+                    var errorMessage = "Error Message:```" + result.ErrorReason + "```" + "**Type rental!help for more information about commands.**\n";
                     Console.WriteLine(result.ErrorReason);
                     await message.Channel.SendMessageAsync(errorMessage);
                 }

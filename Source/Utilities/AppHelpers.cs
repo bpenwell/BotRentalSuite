@@ -72,6 +72,7 @@ namespace Utilities
             deliveryMap.Add("7H", new TimeSpan(7, 0, 0));
             deliveryMap.Add("8H", new TimeSpan(8, 0, 0));
             deliveryMap.Add("9H", new TimeSpan(9, 0, 0));
+            deliveryMap.Add("9H40M", new TimeSpan(9, 40, 0));
             deliveryMap.Add("10H", new TimeSpan(10, 0, 0));
             deliveryMap.Add("11H", new TimeSpan(11, 0, 0));
             deliveryMap.Add("12H", new TimeSpan(12, 0, 0));

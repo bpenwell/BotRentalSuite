@@ -24,8 +24,6 @@ namespace RewardingRentals.Client
             {
                 if (DiscordConnection.Instance.Connected)
                 {
-
-                    Console.WriteLine("Working...");
                     await Update();
                 }
                 else

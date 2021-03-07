@@ -183,7 +183,7 @@ namespace RewardingRentals.Server
         {
 
             int index = 0;
-            var unDeliveredRentals = m_undeliveredRentals;
+            var unDeliveredRentals = new SortedList<DateTime, RentalInformation>(m_undeliveredRentals);
             foreach (var deliveryKVP in unDeliveredRentals)
             {
                 var delivery = deliveryKVP.Value;
@@ -193,6 +193,7 @@ namespace RewardingRentals.Server
 
                     foreach (var bot in delivery.InternalKeyNumbers)
                     {
+                        Console.WriteLine("Working..."); 
                         await DeliveryManager.Instance.GetBotKey(bot);
                     }
 
@@ -205,7 +206,7 @@ namespace RewardingRentals.Server
         public RentalInformation NextAvailableKey()
         {
             var currentAvailableKeys = DeliveryManager.Instance.RegisteredKeys;
-            var deliveriesInProgress = m_deliveriesInProgress;
+            var deliveriesInProgress = new SortedList<DateTime, RentalInformation>(m_deliveriesInProgress);
             foreach (var deliveryKVP in deliveriesInProgress)
             {
                 var deliveryInfo = deliveryKVP.Value;

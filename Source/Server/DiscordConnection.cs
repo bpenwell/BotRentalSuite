@@ -57,15 +57,35 @@ namespace RewardingRentals.Server
             await m_client.StartAsync();
         }
 
-        public void DeliverKey(string key, string channelName)
+        public async Task SendMessageToChannel(string channelName, string value, bool isKey = false)
         {
+            await Task.Delay(TimeSpan.FromSeconds(1));
             var channels = m_client.GetGuild(m_serverId).TextChannels;
-            var applicableChannel = channels.SingleOrDefault(c => c.Name == channelName);
-            EmbedBuilder builder = new EmbedBuilder();
-            builder.WithTitle("Delivery Time!")
-                .AddField($"Key",
-                $"{key}\n");
-            applicableChannel.SendMessageAsync("", false, builder.Build());
+
+            try
+            {
+                var applicableChannel = channels.Single(c => c.Name == channelName);
+
+                if (isKey)
+                {
+                    EmbedBuilder builder = new EmbedBuilder();
+                    builder.WithTitle("Delivery Time!")
+                        .AddField($"Key",
+                        $"{value}\n");
+                    await applicableChannel.SendMessageAsync("", false, builder.Build());
+                }
+                else
+                {
+                    await applicableChannel.SendMessageAsync(value);
+                }
+            }
+            catch (Exception e)
+            {
+                var message = "\nMost likely found 0 or multiple channels with the same name\n" + e.Message;
+                Console.WriteLine(message);
+                throw new Exception(message);
+            }
+
         }
 
         private Task BotConnected()

@@ -151,7 +151,7 @@ namespace RewardingRentals.Server
                     schedulerResult.Code = ResultEnum.Success;
                     //Customize display to show delivery time in their regional time.
                     schedulerResult.Result = $"Success! We have added you to the schedule. Expect key delivery at {newRental.DeliveryTime.ToLongDateString()} {newRental.DeliveryTime.ToLongTimeString()}!";
-
+                    DiscordConnection.Instance.SendMessageToChannel(newRental.ChannelName, $"Expect delivery at {newRental.DeliveryTime} PST");
                     var keysWanted = newRental.Quantity;
                     var keyNumber = 1;
                     foreach (var key in availableKeyMap)
@@ -191,10 +191,14 @@ namespace RewardingRentals.Server
                 {
                     m_deliveriesInProgress.Add(deliveryKVP.Key, deliveryKVP.Value);
 
+                    var keysDelivered = 1;
                     foreach (var bot in delivery.InternalKeyNumbers)
                     {
-                        Console.WriteLine("Working..."); 
+                        var message = $"Retrieving key ({keysDelivered} of {delivery.InternalKeyNumbers.Count})";
+                        Console.WriteLine(message + $" for {delivery.ChannelName}");
+                        await DiscordConnection.Instance.SendMessageToChannel(delivery.ChannelName, message + "... Please allow a minute for processing.");
                         await DeliveryManager.Instance.GetBotKey(bot);
+                        keysDelivered++;
                     }
 
                     m_undeliveredRentals.RemoveAt(index);
@@ -239,7 +243,7 @@ namespace RewardingRentals.Server
             }
 
             var keyToDeliver = NextAvailableKey();
-            DiscordConnection.Instance.DeliverKey(keyToDeliver.Key, keyToDeliver.ChannelName);
+            await DiscordConnection.Instance.SendMessageToChannel(keyToDeliver.Key, keyToDeliver.ChannelName, true);
         }
     }
 }

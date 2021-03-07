@@ -15,23 +15,33 @@ namespace RewardingRentals.Client
         public Schedule BotSchedule = new Schedule();
         public async Task MainAsync()
         {
-            var settings = SettingsFile.Instance;
-            settings.Parse();
-
-            await DiscordConnection.Instance.StartupBot("NzYzOTc5MTY0NjkyMTE5NjEy.X3_lCg.H8wKbecgvaKBjbwJmZAvzBxfsCo");
-
-            while (true)
+            try
             {
-                if (DiscordConnection.Instance.Connected)
+                var settings = SettingsFile.Instance;
+                settings.Parse();
+
+                await DiscordConnection.Instance.StartupBot("NzYzOTc5MTY0NjkyMTE5NjEy.X3_lCg.H8wKbecgvaKBjbwJmZAvzBxfsCo");
+
+                while (true)
                 {
-                    await Update();
-                }
-                else
-                {
-                    Console.WriteLine("Waiting for internet connection");
+                    if (DiscordConnection.Instance.Connected)
+                    {
+                        await Update();
+                    }
+                    else
+                    {
+                        Console.WriteLine("Waiting for internet connection");
+                    }
+
+                    await Task.Delay(1000);
                 }
 
-                await Task.Delay(1000);
+            }
+            finally
+            {
+
+                Console.Write("\nPress Enter to close window ...");
+                Console.Read();
             }
         }
 

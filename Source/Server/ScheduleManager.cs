@@ -30,6 +30,7 @@ namespace RewardingRentals.Server
         /// </summary>
         private ScheduleManager()
         {
+            m_deliveriesInProgress = new SortedList<DateTime, RentalInformation>();
             m_undeliveredRentals = new SortedList<DateTime, RentalInformation>();
             m_deliveredRentals = new SortedList<DateTime, RentalInformation>();
             if (!File.Exists(m_absoluteSavePath))
@@ -47,6 +48,12 @@ namespace RewardingRentals.Server
         /// DateTime should be the delivery time
         /// </summary>
         private SortedList<DateTime, RentalInformation> m_undeliveredRentals;
+
+
+        /// <summary>
+        /// DateTime should be the delivery time
+        /// </summary>
+        private SortedList<DateTime, RentalInformation> m_deliveriesInProgress;
 
         /// <summary>
         /// DateTime should be the completion time
@@ -172,33 +179,34 @@ namespace RewardingRentals.Server
             return schedulerResult;
         }
 
-        public bool NeedToDeliverKeys()
+        private async Task BeginDeliveryIfNecessary()
         {
-            var deliveriesNeeded = m_undeliveredRentals.Count != 0;
-            var keysAvailable = DeliveryManager.Instance.RegisteredKeys.Count != 0;
 
-            foreach (var deliveryKVP in m_undeliveredRentals)
+            int index = 0;
+            var unDeliveredRentals = m_undeliveredRentals;
+            foreach (var deliveryKVP in unDeliveredRentals)
             {
                 var delivery = deliveryKVP.Value;
                 if (DateTime.Now > delivery.DeliveryTime)
                 {
-                    foreach (var keyNumber in delivery.InternalKeyNumbers)
-                    {
-                        if (DeliveryManager.Instance.RegisteredKeys.ContainsKey(keyNumber))
-                        {
-                            return true;
-                        }
-                    }
-                }
-            }
+                    m_deliveriesInProgress.Add(deliveryKVP.Key, deliveryKVP.Value);
 
-            return false;
+                    foreach (var bot in delivery.InternalKeyNumbers)
+                    {
+                        await DeliveryManager.Instance.GetBotKey(bot);
+                    }
+
+                    m_undeliveredRentals.RemoveAt(index);
+                }
+                index++;
+            }
         }
 
-        public RentalInformation DeliverNextKey()
+        public RentalInformation NextAvailableKey()
         {
             var currentAvailableKeys = DeliveryManager.Instance.RegisteredKeys;
-            foreach (var deliveryKVP in m_undeliveredRentals)
+            var deliveriesInProgress = m_deliveriesInProgress;
+            foreach (var deliveryKVP in deliveriesInProgress)
             {
                 var deliveryInfo = deliveryKVP.Value;
 
@@ -212,13 +220,25 @@ namespace RewardingRentals.Server
                         DeliveryManager.Instance.RegisteredKeys.Remove(undeliveredBotNumber);
 
                         m_deliveredRentals.Add(rentalInformation.DeliveryTime, rentalInformation);
-                        m_undeliveredRentals.RemoveAt(0);
+                        m_deliveriesInProgress.RemoveAt(0);
                         return rentalInformation;
                     }
                 }
             }
 
             throw new Exception("Couldn't deliver next key");
+        }
+
+        public async Task Update()
+        {
+            await BeginDeliveryIfNecessary();
+            if (DeliveryManager.Instance.RegisteredKeys.Count == 0)
+            {
+                return;
+            }
+
+            var keyToDeliver = NextAvailableKey();
+            DiscordConnection.Instance.DeliverKey(keyToDeliver.Key, keyToDeliver.ChannelName);
         }
     }
 }

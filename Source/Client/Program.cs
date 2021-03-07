@@ -10,7 +10,7 @@ namespace RewardingRentals.Client
 {
     public class Program
     {
-        public static void Main(string[] args) =>   new Program().MainAsync().GetAwaiter().GetResult();
+        public static void Main(string[] args) => new Program().MainAsync().GetAwaiter().GetResult();
 
         public Schedule BotSchedule = new Schedule();
         public async Task MainAsync()
@@ -24,7 +24,9 @@ namespace RewardingRentals.Client
             {
                 if (DiscordConnection.Instance.Connected)
                 {
-                    Update();
+
+                    Console.WriteLine("Working...");
+                    await Update();
                 }
                 else
                 {
@@ -35,9 +37,9 @@ namespace RewardingRentals.Client
             }
         }
 
-        public void Update()
+        public async Task Update()
         {
-            BotSchedule.Update();
+            await BotSchedule.Update();
         }
     }
 }

@@ -18,7 +18,8 @@ namespace RewardingRentals.Server
     public struct SchedulerResult
     {
         public ResultEnum Code;
-        public string Result;
+        public string Message;
+        public RentalInformation Rental;
     };
 
     public class ScheduleManager : ISaveable
@@ -30,9 +31,9 @@ namespace RewardingRentals.Server
         /// </summary>
         private ScheduleManager()
         {
-            m_deliveriesInProgress = new SortedList<DateTime, RentalInformation>();
-            m_undeliveredRentals = new SortedList<DateTime, RentalInformation>();
-            m_deliveredRentals = new SortedList<DateTime, RentalInformation>();
+            m_deliveriesInProgress = new SortedList<DateTime, RentalInformation>(new DuplicateKeyComparer<DateTime>());
+            m_undeliveredRentals = new SortedList<DateTime, RentalInformation>(new DuplicateKeyComparer<DateTime>());
+            m_deliveredRentals = new SortedList<DateTime, RentalInformation>(new DuplicateKeyComparer<DateTime>());
             if (!File.Exists(m_absoluteSavePath))
             {
                 Console.WriteLine($"Created {m_absoluteSavePath}");
@@ -71,18 +72,22 @@ namespace RewardingRentals.Server
             }
         }
 
-        public SchedulerResult TryAddToSchedule(string botName, DateTime dropDate, long quantity, string region, string discordID, string channelName, decimal totalPrice, TimeSpan deliveryTimeBeforeDrop)
+        public SchedulerResult TryAddToSchedule(string botName, DateTime dropDate, long quantity, string region, string discordID, string channelName, decimal totalPrice, TimeSpan deliveryTimeBeforeDrop, bool firmDelivery)
         {
             var schedulerResult = new SchedulerResult();
+            var beforeUndeliveredCount = m_undeliveredRentals.Count;
+            var quantityLeftToFulfill = quantity;
 
-            var actualDropTime = AppHelpers.GetDropDateTime(region, dropDate);
+            var regionEnum = AppHelpers.GetRegionEnum(region);
+            var actualDropTime = AppHelpers.GetDropDateTime(regionEnum, dropDate);
             var newRental = new RentalInformation
             {
                 BotName = botName,
-                Quantity = quantity,
+                DropTime = actualDropTime,
+                FirmDelivery = firmDelivery,
                 DiscordID = discordID,
                 ChannelName = channelName,
-                Region = region,
+                Region = regionEnum,
                 DeliveryTime = actualDropTime - deliveryTimeBeforeDrop,
                 CompletionTime = actualDropTime + AppHelpers.GetRentalCompletionTime(),
                 ChannelDeletionTime = actualDropTime + AppHelpers.GetRentalCompletionTime(),
@@ -103,11 +108,23 @@ namespace RewardingRentals.Server
                 var rental = rentalKVP.Value;
                 if (newRental.IsTheSameDrop(rental))
                 {
-                    copiesAlreadyTaken += rental.Quantity;
-
-                    foreach (var key in rental.InternalKeyNumbers)
+                    copiesAlreadyTaken++;
+                    availableKeyMap[Convert.ToInt32(rental.InternalKeyNumber - 1)] = false;
+                }
+                else if (rental.DropTime > newRental.DropTime)
+                {
+                    if ((newRental.CompletionTime > rental.DeliveryTime) && rental.FirmDelivery)
                     {
-                        availableKeyMap[Convert.ToInt32(key - 1)] = false;
+                        copiesAlreadyTaken++;
+                        availableKeyMap[Convert.ToInt32(rental.InternalKeyNumber - 1)] = false;
+                    }
+                }
+                else if (rental.DropTime < newRental.DropTime)
+                {
+                    if ((rental.CompletionTime >= newRental.DeliveryTime) && newRental.FirmDelivery)
+                    {
+                        copiesAlreadyTaken++;
+                        availableKeyMap[Convert.ToInt32(rental.InternalKeyNumber - 1)] = false;
                     }
                 }
             }
@@ -118,11 +135,23 @@ namespace RewardingRentals.Server
                 var rental = rentalKVP.Value;
                 if (newRental.IsTheSameDrop(rental))
                 {
-                    copiesAlreadyTaken += rental.Quantity;
-
-                    foreach (var key in rental.InternalKeyNumbers)
+                    copiesAlreadyTaken++;
+                    availableKeyMap[Convert.ToInt32(rental.InternalKeyNumber - 1)] = false;
+                }
+                else if (rental.DropTime > newRental.DropTime)
+                {
+                    if ((newRental.CompletionTime > rental.DeliveryTime) && rental.FirmDelivery)
                     {
-                        availableKeyMap[Convert.ToInt32(key - 1)] = false;
+                        copiesAlreadyTaken++;
+                        availableKeyMap[Convert.ToInt32(rental.InternalKeyNumber - 1)] = false;
+                    }
+                }
+                else if (rental.DropTime < newRental.DropTime)
+                {
+                    if ((rental.CompletionTime >= newRental.DeliveryTime) && newRental.FirmDelivery)
+                    {
+                        copiesAlreadyTaken++;
+                        availableKeyMap[Convert.ToInt32(rental.InternalKeyNumber - 1)] = false;
                     }
                 }
             }
@@ -134,45 +163,143 @@ namespace RewardingRentals.Server
             else if (copiesAlreadyTaken == maxKeysOwned)
             {
                 schedulerResult.Code = ResultEnum.Unavailable;
-                schedulerResult.Result = "Sorry! All of our keys are already rented out for this drop.";
+                schedulerResult.Message = "Sorry! All of our keys are already rented out for this drop.";
             }
             else
             {
                 var copiesAvailable = maxKeysOwned - copiesAlreadyTaken;
 
-                if (newRental.Quantity > copiesAvailable)
+                if (copiesAvailable < quantity)
                 {
                     schedulerResult.Code = ResultEnum.PartiallyUnavailable;
-                    schedulerResult.Result = $"So we have a bit of a situation. We only have {copiesAvailable} copies of {newRental.BotName} available. " +
+                    schedulerResult.Message = $"We only have {copiesAvailable} copies of {newRental.BotName} available. " +
                         $"How many copies would you like to secure?";
                 }
                 else
                 {
-                    schedulerResult.Code = ResultEnum.Success;
-                    //Customize display to show delivery time in their regional time.
-                    schedulerResult.Result = $"Success! We have added you to the schedule. Expect key delivery at {newRental.DeliveryTime.ToLongDateString()} {newRental.DeliveryTime.ToLongTimeString()}!";
-                    DiscordConnection.Instance.SendMessageToChannel(newRental.ChannelName, $"Expect delivery at {newRental.DeliveryTime} PST");
-                    var keysWanted = newRental.Quantity;
                     var keyNumber = 1;
+
+                    var prioritizedKeys = new List<bool>();
+                    for (var index = 0; index < maxKeysOwned; index++)
+                    {
+                        prioritizedKeys.Add(true);
+                    }
+
                     foreach (var key in availableKeyMap)
                     {
-                        if (keysWanted == 0)
-                        {
-                            break;
-                        }
-
                         //Key is available
                         if (key)
                         {
-                            newRental.InternalKeyNumbers.Add(keyNumber);
-                            keysWanted--;
+                            //Prioritize keys that wont move a delivery back
+                            foreach (var deliveryKVP in m_undeliveredRentals)
+                            {
+                                var delivery = deliveryKVP.Value;
+
+                                if (newRental.DropTime < delivery.DropTime)
+                                {
+                                    if (newRental.CompletionTime > delivery.DeliveryTime)
+                                    {
+                                        prioritizedKeys[keyNumber - 1] = false;
+                                    }
+                                }
+                                else
+                                {
+                                    if (newRental.CompletionTime < delivery.DeliveryTime)
+                                    {
+                                        prioritizedKeys[keyNumber - 1] = false;
+                                    }
+                                }
+                            }
                         }
 
                         keyNumber++;
                     }
 
-                    //Only add when successful
-                    m_undeliveredRentals.Add(newRental.DeliveryTime, newRental);
+                    keyNumber = 1;
+                    foreach (var key in prioritizedKeys)
+                    {
+                        //This key is prioritized, since adding a rental to this bot's schedule won't put a delivery out
+                        if (key)
+                        {
+                            if (quantityLeftToFulfill == 0)
+                            {
+                                break;
+                            }
+
+                            newRental.InternalKeyNumber = keyNumber;
+                            m_undeliveredRentals.Add(newRental.DeliveryTime, newRental);
+                            quantityLeftToFulfill--;
+
+                            var regionalTime = AppHelpers.GetRegionalTime(newRental.Region, newRental.DeliveryTime);
+                            schedulerResult.Code = ResultEnum.Success;
+                            schedulerResult.Rental = newRental;
+                            schedulerResult.Message = $"Delivery time: ```{regionalTime.ToLongDateString()} {regionalTime.ToLongTimeString()} {AppHelpers.GetRegionZoneString(newRental.Region)}\n" +
+                                $"{newRental.DeliveryTime.ToLongDateString()} {newRental.DeliveryTime.ToLongTimeString()} PST```";
+                        }
+
+                        keyNumber++;
+                    }
+
+                    if (!newRental.KeyAssigned())
+                    {
+                        keyNumber = 1;
+                        //We need to push a delivery back in order to make this happen
+                        foreach (var key in availableKeyMap)
+                        {
+                            //Key is available
+                            if (key)
+                            {
+                                SortedList<DateTime, RentalInformation> originalList = new SortedList<DateTime, RentalInformation>(m_undeliveredRentals, new DuplicateKeyComparer<DateTime>());
+                                foreach (var deliveryKVP in originalList)
+                                {
+                                    var delivery = deliveryKVP.Value;
+
+                                    if (delivery.FirmDelivery || quantityLeftToFulfill == 0)
+                                    {
+                                        continue;
+                                    }
+
+                                    newRental.InternalKeyNumber = keyNumber;
+                                    m_undeliveredRentals.Add(newRental.DeliveryTime, newRental);
+                                    quantityLeftToFulfill--;
+
+                                    delivery.DeliveryTime = newRental.CompletionTime;
+                                    var regionalTime = AppHelpers.GetRegionalTime(delivery.Region, delivery.DeliveryTime);
+
+                                    schedulerResult.Code = ResultEnum.Success;
+                                    schedulerResult.Rental = newRental;
+                                    schedulerResult.Message = $"Delivery time: ```{regionalTime.ToLongDateString()} {regionalTime.ToLongTimeString()} {AppHelpers.GetRegionZoneString(newRental.Region)}\n" +
+                                        $"{newRental.DeliveryTime.ToLongDateString()} {newRental.DeliveryTime.ToLongTimeString()} PST```";
+
+                                    var deliveryTimeUpdateMessage = "@here We have updated your delivery time to accommadate another region's rental.\n" +
+                                        $"Updated delivery time: ```{regionalTime.ToLongDateString()} {regionalTime.ToLongTimeString()} {AppHelpers.GetRegionZoneString(delivery.Region)}\n" +
+                                        $"{delivery.DeliveryTime.ToLongDateString()} {delivery.DeliveryTime.ToLongTimeString()} PST```" +
+                                        $"If you have any issue with this, please contact server support.";
+                                    _ = DiscordConnection.Instance.SendMessageToChannel(delivery.ChannelName, deliveryTimeUpdateMessage);
+                                    return schedulerResult;
+                                }
+                            }
+
+                            keyNumber++;
+                        }
+
+                    }
+                }
+            }
+
+            if (schedulerResult.Code == ResultEnum.Success)
+            {
+                if (!newRental.KeyAssigned())
+                {
+                    throw new Exception("Sanity check failure: TryAddToSchedule has failed to assign rental a key, but claims success");
+                }
+                else if (m_undeliveredRentals.Count != (beforeUndeliveredCount + quantity))
+                {
+                    throw new Exception("Sanity check failure: TryAddToSchedule has failed add a success to the undelivered rental list");
+                }
+                else if (quantityLeftToFulfill != 0)
+                {
+                    throw new Exception("Sanity check failure: TryAddToSchedule has failed fulfill all the keys, but claims success");
                 }
             }
 
@@ -183,7 +310,7 @@ namespace RewardingRentals.Server
         {
 
             int index = 0;
-            var unDeliveredRentals = new SortedList<DateTime, RentalInformation>(m_undeliveredRentals);
+            var unDeliveredRentals = new SortedList<DateTime, RentalInformation>(m_undeliveredRentals, new DuplicateKeyComparer<DateTime>());
             foreach (var deliveryKVP in unDeliveredRentals)
             {
                 var delivery = deliveryKVP.Value;
@@ -191,15 +318,9 @@ namespace RewardingRentals.Server
                 {
                     m_deliveriesInProgress.Add(deliveryKVP.Key, deliveryKVP.Value);
 
-                    var keysDelivered = 1;
-                    foreach (var bot in delivery.InternalKeyNumbers)
-                    {
-                        var message = $"Retrieving key ({keysDelivered} of {delivery.InternalKeyNumbers.Count})";
-                        Console.WriteLine(message + $" for {delivery.ChannelName}");
-                        await DiscordConnection.Instance.SendMessageToChannel(delivery.ChannelName, message + "... Please allow a minute for processing.");
-                        await DeliveryManager.Instance.GetBotKey(bot);
-                        keysDelivered++;
-                    }
+                    Console.WriteLine("Retrieving key...");
+                    await DiscordConnection.Instance.SendMessageToChannel(delivery.ChannelName, "Retrieving key... Please allow a minute for processing.");
+                    await DeliveryManager.Instance.GetBotKey(delivery.InternalKeyNumber);
 
                     m_undeliveredRentals.RemoveAt(index);
                 }
@@ -210,24 +331,21 @@ namespace RewardingRentals.Server
         public RentalInformation NextAvailableKey()
         {
             var currentAvailableKeys = DeliveryManager.Instance.RegisteredKeys;
-            var deliveriesInProgress = new SortedList<DateTime, RentalInformation>(m_deliveriesInProgress);
+            var deliveriesInProgress = new SortedList<DateTime, RentalInformation>(m_deliveriesInProgress, new DuplicateKeyComparer<DateTime>());
             foreach (var deliveryKVP in deliveriesInProgress)
             {
-                var deliveryInfo = deliveryKVP.Value;
+                var delivery = deliveryKVP.Value;
 
-                foreach (var undeliveredBotNumber in deliveryInfo.InternalKeyNumbers)
+                if (currentAvailableKeys.ContainsKey(delivery.InternalKeyNumber))
                 {
-                    if (currentAvailableKeys.ContainsKey(undeliveredBotNumber))
-                    {
-                        RentalInformation rentalInformation = deliveryInfo;
-                        var key = currentAvailableKeys[undeliveredBotNumber];
-                        rentalInformation.Key = key;
-                        DeliveryManager.Instance.RegisteredKeys.Remove(undeliveredBotNumber);
+                    RentalInformation rentalInformation = delivery;
+                    var key = currentAvailableKeys[delivery.InternalKeyNumber];
+                    rentalInformation.Key = key;
+                    DeliveryManager.Instance.RegisteredKeys.Remove(delivery.InternalKeyNumber);
 
-                        m_deliveredRentals.Add(rentalInformation.DeliveryTime, rentalInformation);
-                        m_deliveriesInProgress.RemoveAt(0);
-                        return rentalInformation;
-                    }
+                    m_deliveredRentals.Add(rentalInformation.DeliveryTime, rentalInformation);
+                    m_deliveriesInProgress.RemoveAt(0);
+                    return rentalInformation;
                 }
             }
 

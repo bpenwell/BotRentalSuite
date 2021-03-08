@@ -40,7 +40,7 @@ namespace RewardingRentals.Client
             finally
             {
 
-                Console.Write("\nPress Enter to close window ...");
+                Console.Write("\nAn error may have occurred.\n Press Enter to close window ...");
                 Console.Read();
             }
         }

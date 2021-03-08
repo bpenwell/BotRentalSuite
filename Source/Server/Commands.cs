@@ -31,7 +31,7 @@ namespace RewardingRentals.Server
         [Command("rent")]
         //This will allow supports to schedule with the bot
         [RequireUserPermission(ChannelPermission.ManageRoles)]
-        public async Task AddToSchedule(string botName, DateTime dropDate, long quantity, string region, string discordID, decimal totalPrice, string timeBeforeDrop)
+        public async Task AddToSchedule(string botName, DateTime dropDate, long quantity, string region, string discordID, decimal totalPrice, string timeBeforeDrop, bool firmDelivery)
         {
             var idParts = discordID.Split('!', '<', '>');
             if (idParts.Length == 3)
@@ -45,11 +45,11 @@ namespace RewardingRentals.Server
             var ticketChannelName = AppHelpers.GetNextTicketName(user, botName).ToLower();
 
             //Backend will determine if this scheduling is possible
-            var result = ScheduleManager.Instance.TryAddToSchedule(botName, dropDate, quantity, region, discordID, ticketChannelName, totalPrice, AppHelpers.GetRentalDeliveryTime(timeBeforeDrop));
+            var result = ScheduleManager.Instance.TryAddToSchedule(botName, dropDate, quantity, region, discordID, ticketChannelName, totalPrice, AppHelpers.GetRentalDeliveryTime(timeBeforeDrop), firmDelivery);
 
             if (result.Code == ResultEnum.Unavailable)
             {
-                await ReplyAsync($"Scheduling failed for the following reason: {result.Result}");
+                await ReplyAsync($"Scheduling failed for the following reason: {result.Message}");
                 return;
             }
 
@@ -58,15 +58,15 @@ namespace RewardingRentals.Server
             await ticketChannel.AddPermissionOverwriteAsync(Context.Guild.EveryoneRole, AppHelpers.GetEveryonePermissionOverrides());
             await ticketChannel.AddPermissionOverwriteAsync(Context.Guild.Owner, AppHelpers.GetClientPermissionOverrides());
             await ticketChannel.AddPermissionOverwriteAsync(serverUser, AppHelpers.GetClientPermissionOverrides());
-
             // Confirm success via in the current channel
             EmbedBuilder builder = new EmbedBuilder();
             builder.WithTitle("Scheduler")
                 .AddField("Success",
-                $"You've been scheduled to rent {quantity} {botName} for the {region} region.\n" +
-                $"Your delivery channel is {ticketChannel.Mention}. The key will be delivered to this channel.\n");
+                $"Your delivery channel is {ticketChannel.Mention}. The key will be delivered there.\n");
 
             await ReplyAsync("", false, builder.Build());
+
+            await ticketChannel.SendMessageAsync(result.Message);
         }
 
 

@@ -2,28 +2,39 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Server
+namespace Utilities
 {
+    public enum Region
+    {
+        EU,
+        CA,
+        RU,
+        MX,
+        US,
+        JP,
+        Asia,
+    }
     public class RentalInformation
     {
         public DateTime DeliveryTime;
+        public DateTime DropTime;
         public DateTime CompletionTime;
         public DateTime ChannelDeletionTime;
 
-        public List<long> InternalKeyNumbers;
+        public long InternalKeyNumber;
 
+        public bool FirmDelivery = false;
         public bool IsDurationRental = false;
-        public long Quantity;
         public decimal RentalPrice;
         public string Key;
-        public string Region;
+        public Region Region;
         public string DiscordID;
         public string BotName;
         public string ChannelName;
 
         public RentalInformation()
         {
-            InternalKeyNumbers = new List<long>();
+            InternalKeyNumber = -1;
         }
 
         /// <summary>
@@ -34,20 +45,25 @@ namespace Server
         public bool IsTheSameDrop(RentalInformation comparableRental)
         {
             bool retValue = false;
-            if (Region == comparableRental.Region)
+            if (Region != comparableRental.Region)
             {
-                return true;
+                return false;
             }
 
-            if (BotName == comparableRental.BotName)
+            if (BotName != comparableRental.BotName)
             {
-                return true;
+                return false;
             }
 
-            retValue &= DeliveryTime.DayOfYear == comparableRental.DeliveryTime.DayOfYear;
-            retValue &= DeliveryTime.TimeOfDay == comparableRental.DeliveryTime.TimeOfDay;
+            retValue &= DropTime.DayOfYear == comparableRental.DropTime.DayOfYear;
+            retValue &= DropTime.TimeOfDay == comparableRental.DropTime.TimeOfDay;
 
             return retValue;
+        }
+
+        public bool KeyAssigned()
+        {
+            return InternalKeyNumber != -1;
         }
     };
 

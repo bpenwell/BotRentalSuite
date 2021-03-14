@@ -5,5 +5,7 @@
         string SaveFileName { get; }
 
         void Save();
+
+        void Load();
     }
 }

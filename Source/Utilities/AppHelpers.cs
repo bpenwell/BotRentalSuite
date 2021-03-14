@@ -1,6 +1,9 @@
 ﻿using Discord;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Xml.Serialization;
 
 namespace Utilities
 {
@@ -158,6 +161,28 @@ namespace Utilities
         public static TimeSpan GetRentalChannelDeletionTime()
         {
             return new TimeSpan(1, 5, 0);
+        }
+
+        public static void Serialize(FileStream writer, IDictionary dictionary)
+        {
+            List<Entry> entries = new List<Entry>(dictionary.Count);
+            foreach (object key in dictionary.Keys)
+            {
+                entries.Add(new Entry(key, dictionary[key]));
+            }
+            XmlSerializer serializer = new XmlSerializer(typeof(List<Entry>));
+            serializer.Serialize(writer, entries);
+        }
+
+        public static void Deserialize(FileStream reader, IDictionary dictionary)
+        {
+            dictionary.Clear();
+            XmlSerializer serializer = new XmlSerializer(typeof(List<Entry>));
+            List<Entry> list = (List<Entry>)serializer.Deserialize(reader);
+            foreach (Entry entry in list)
+            {
+                dictionary[entry.Key] = entry.Value;
+            }
         }
     }
 }

@@ -36,25 +36,44 @@ namespace Server
         {
             RegisteredKeys = new Dictionary<long, string>();
             RentableBots = SettingsFile.Instance.RentableBots;
-            if (!File.Exists(m_absoluteSavePath))
-            {
-                Console.WriteLine($"Created {m_absoluteSavePath}");
-                File.Create(m_absoluteSavePath);
-                return;
-            }
+            //Load();
         }
 
-        public string SaveFileName => @"DeliveryManager.sv";
+        ~DeliveryManager()
+        {
+            Save();
+        }
+
+        public string SaveFileName => @"DeliveryManager.xml";
         private string m_absoluteSavePath => Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + Path.DirectorySeparatorChar + SaveFileName;
+
+        public void Load()
+        {
+            if (File.Exists(m_absoluteSavePath))
+            {
+                Console.WriteLine($"Loading latest {m_absoluteSavePath}");
+                using (FileStream fileStream = File.OpenWrite(m_absoluteSavePath))
+                {
+                    AppHelpers.Deserialize(fileStream, RentableBots);
+                    AppHelpers.Deserialize(fileStream, RegisteredKeys);
+                }
+            }
+        }
 
         public void Save()
         {
             File.Delete(m_absoluteSavePath);
 
+            if (RentableBots.Count == 0 && RegisteredKeys.Count == 0)
+            {
+                return;
+            }
+
             Console.WriteLine($"Saved latest {m_absoluteSavePath}");
             using (FileStream fileStream = File.OpenWrite(m_absoluteSavePath))
             {
-                //Output currently scheduled stuff
+                AppHelpers.Serialize(fileStream, RentableBots);
+                AppHelpers.Serialize(fileStream, RegisteredKeys);
             }
         }
 

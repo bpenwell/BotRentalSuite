@@ -10,7 +10,12 @@ namespace RewardingRentals.Client
 {
     public class Program
     {
-        public static void Main(string[] args) => new Program().MainAsync().GetAwaiter().GetResult();
+        public static void Main(string[] args)
+        {
+            var spreadsheetMan = GoogleSpreadsheetManager.Instance;
+            spreadsheetMan.ValidateCredential();
+            new Program().MainAsync().GetAwaiter().GetResult();
+        }
 
 
         public Schedule BotSchedule = new Schedule();
@@ -18,7 +23,6 @@ namespace RewardingRentals.Client
         {
             try
             {
-                var spreadsheetMan = GoogleSpreadsheetManager.Instance;
                 var settings = SettingsFile.Instance;
                 settings.Parse();
 

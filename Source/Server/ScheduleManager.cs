@@ -34,15 +34,15 @@ namespace RewardingRentals.Server
             m_deliveriesInProgress = new SortedList<DateTime, RentalInformation>(new DuplicateKeyComparer<DateTime>());
             m_undeliveredRentals = new SortedList<DateTime, RentalInformation>(new DuplicateKeyComparer<DateTime>());
             m_deliveredRentals = new SortedList<DateTime, RentalInformation>(new DuplicateKeyComparer<DateTime>());
-            if (!File.Exists(m_absoluteSavePath))
-            {
-                Console.WriteLine($"Created {m_absoluteSavePath}");
-                File.Create(m_absoluteSavePath);
-                return;
-            }
+            //Load();
         }
 
-        public string SaveFileName => @"ScheduleManager.sv";
+        ~ScheduleManager()
+        {
+            Save();
+        }
+
+        public string SaveFileName => @"ScheduleManager.xml";
         private string m_absoluteSavePath => Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + Path.DirectorySeparatorChar + SaveFileName;
 
         /// <summary>
@@ -61,14 +61,35 @@ namespace RewardingRentals.Server
         /// </summary>
         private SortedList<DateTime, RentalInformation> m_deliveredRentals;
 
+        public void Load()
+        {
+            if (File.Exists(m_absoluteSavePath))
+            {
+                Console.WriteLine($"Loading latest {m_absoluteSavePath}");
+                using (FileStream fileStream = File.OpenWrite(m_absoluteSavePath))
+                {
+                    AppHelpers.Deserialize(fileStream, m_undeliveredRentals);
+                    AppHelpers.Deserialize(fileStream, m_deliveriesInProgress);
+                    AppHelpers.Deserialize(fileStream, m_deliveredRentals);
+                }
+            }
+        }
+
         public void Save()
         {
             File.Delete(m_absoluteSavePath);
 
+            if (m_undeliveredRentals.Count == 0 && m_deliveriesInProgress.Count == 0 && m_deliveredRentals.Count == 0)
+            {
+                return;
+            }
+
             Console.WriteLine($"Saved latest {m_absoluteSavePath}");
             using (FileStream fileStream = File.OpenWrite(m_absoluteSavePath))
             {
-                //Output currently scheduled stuff
+                AppHelpers.Serialize(fileStream, m_undeliveredRentals);
+                AppHelpers.Serialize(fileStream, m_deliveriesInProgress);
+                AppHelpers.Serialize(fileStream, m_deliveredRentals);
             }
         }
 
@@ -301,6 +322,8 @@ namespace RewardingRentals.Server
                 {
                     throw new Exception("Sanity check failure: TryAddToSchedule has failed fulfill all the keys, but claims success");
                 }
+
+                Save();
             }
 
             return schedulerResult;
@@ -308,7 +331,6 @@ namespace RewardingRentals.Server
 
         private async Task BeginDeliveryIfNecessary()
         {
-
             int index = 0;
             var unDeliveredRentals = new SortedList<DateTime, RentalInformation>(m_undeliveredRentals, new DuplicateKeyComparer<DateTime>());
             foreach (var deliveryKVP in unDeliveredRentals)
@@ -323,6 +345,7 @@ namespace RewardingRentals.Server
                     await DeliveryManager.Instance.GetBotKey(delivery.InternalKeyNumber);
 
                     m_undeliveredRentals.RemoveAt(index);
+                    Save();
                 }
                 index++;
             }
@@ -345,6 +368,7 @@ namespace RewardingRentals.Server
 
                     m_deliveredRentals.Add(rentalInformation.DeliveryTime, rentalInformation);
                     m_deliveriesInProgress.RemoveAt(0);
+                    Save();
                     return rentalInformation;
                 }
             }

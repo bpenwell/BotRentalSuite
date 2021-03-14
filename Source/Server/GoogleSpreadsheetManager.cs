@@ -33,11 +33,15 @@ namespace RewardingRentals.Server
         // If modifying these scopes, delete your previously saved credentials
         // at ~/.credentials/sheets.googleapis.com-dotnet-quickstart.json
         static string[] Scopes = { SheetsService.Scope.SpreadsheetsReadonly };
-        static string ApplicationName = "Google Sheets API .NET Quickstart";
 
         static Dictionary<string, Dictionary<long, string>> m_botColumnMap;
 
         private GoogleSpreadsheetManager()
+        {
+            m_botColumnMap = new Dictionary<string, Dictionary<long, string>>();
+        }
+
+        public void ValidateCredential()
         {
             UserCredential credential;
 
@@ -55,19 +59,6 @@ namespace RewardingRentals.Server
                     new FileDataStore(credPath, true)).Result;
                 Console.WriteLine("Credential file saved to: " + credPath);
             }
-
-            // Create Google Sheets API service.
-            m_sheetService = new SheetsService(new BaseClientService.Initializer()
-            {
-                HttpClientInitializer = credential,
-                ApplicationName = ApplicationName,
-            });
-
-            m_botColumnMap = new Dictionary<string, Dictionary<long, string>>();
-            InstantiateBotColumnMap();
-            GetTestData();
-            //var rowNumber = GetDayRow(DateTime.Now);
-            //Console.WriteLine(rowNumber);
         }
 
         public void GetTestData()

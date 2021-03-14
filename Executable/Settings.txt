@@ -2,5 +2,5 @@
 #List of bots you want to rent. YOU WILL NEED TO USE THE EXACT NAME WHEN ADDING TO THE SCHEDULE.
 #Another note: the bot name must be 1 word. I.E. TSB (works), The Shit Bot (does not work).
 #Example seen below:
-TSB: 2
+TSB: 9
 ECB: 1

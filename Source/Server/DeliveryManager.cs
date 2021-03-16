@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Utilities;
 using Utilities.Type;
 using static Utilities.MouseOperations;
+using System.Xml.Serialization;
 
 namespace Server
 {
@@ -18,25 +19,24 @@ namespace Server
         /// <summary>
         /// Should be loaded from a config file
         /// </summary>
-        public Dictionary<string, long> RentableBots;
+        public RentableBotsContainer RentableContainer;
 
-        public Dictionary<long, string> RegisteredKeys;
+        public RegisteredKeysContainer RegisteredContainer;
 
         public long MaximumBotKeys(string botName)
         {
-            if (!RentableBots.TryGetValue(botName, out var keys))
-            {
-                throw new Exception($"Cannot find any rentable bots under the name: {botName}");
-            }
-
-            return keys;
+            var data = RentableContainer.RentableBots.Find(b => b.Bot == botName);
+            return data.Quantity;
         }
 
         private DeliveryManager()
         {
-            RegisteredKeys = new Dictionary<long, string>();
-            RentableBots = SettingsFile.Instance.RentableBots;
-            //Load();
+            RegisteredContainer = new RegisteredKeysContainer();
+            RentableContainer = new RentableBotsContainer
+            {
+                RentableBots = SettingsFile.Instance.RentableBots
+            };
+            Load();
         }
 
         ~DeliveryManager()
@@ -54,8 +54,16 @@ namespace Server
                 Console.WriteLine($"Loading latest {m_absoluteSavePath}");
                 using (FileStream fileStream = File.OpenWrite(m_absoluteSavePath))
                 {
-                    AppHelpers.Deserialize(fileStream, RentableBots);
-                    AppHelpers.Deserialize(fileStream, RegisteredKeys);
+                    Type[] extraTypes1 = new Type[1];
+                    extraTypes1[0] = typeof(BotNumberPair);
+
+                    Type[] extraTypes2 = new Type[1];
+                    extraTypes2[0] = typeof(BotKeyPair);
+
+                    XmlSerializer serializer1 = new XmlSerializer(typeof(RentableBotsContainer), extraTypes1);
+                    XmlSerializer serializer2 = new XmlSerializer(typeof(RegisteredKeysContainer), extraTypes2);
+                    serializer1.Serialize(fileStream, RentableContainer);
+                    serializer2.Serialize(fileStream, RegisteredContainer);
                 }
             }
         }
@@ -64,7 +72,7 @@ namespace Server
         {
             File.Delete(m_absoluteSavePath);
 
-            if (RentableBots.Count == 0 && RegisteredKeys.Count == 0)
+            if (RentableContainer.RentableBots.Count == 0 && RegisteredContainer.RegisteredKeys.Count == 0)
             {
                 return;
             }
@@ -72,8 +80,16 @@ namespace Server
             Console.WriteLine($"Saved latest {m_absoluteSavePath}");
             using (FileStream fileStream = File.OpenWrite(m_absoluteSavePath))
             {
-                AppHelpers.Serialize(fileStream, RentableBots);
-                AppHelpers.Serialize(fileStream, RegisteredKeys);
+                Type[] extraTypes1 = new Type[1];
+                extraTypes1[0] = typeof(BotNumberPair);
+
+                Type[] extraTypes2 = new Type[1];
+                extraTypes2[0] = typeof(BotKeyPair);
+
+                XmlSerializer serializer1 = new XmlSerializer(typeof(RentableBotsContainer), extraTypes1);
+                XmlSerializer serializer2 = new XmlSerializer(typeof(RegisteredKeysContainer), extraTypes2);
+                RentableContainer = serializer1.Deserialize(fileStream) as RentableBotsContainer;
+                RegisteredContainer = serializer2.Deserialize(fileStream) as RegisteredKeysContainer;
             }
         }
 
@@ -102,12 +118,17 @@ namespace Server
 
         public void RegisterNewKey(long number, string key)
         {
-            if (RegisteredKeys.ContainsKey(number) || RegisteredKeys.ContainsValue(key))
+            var exists = RegisteredContainer.RegisteredKeys.Exists(k => k.BotNumber == number || k.Key == key);
+            if (exists)
             {
                 throw new Exception("Registering new key broke.");
             }
 
-            RegisteredKeys.Add(number, key);
+            RegisteredContainer.RegisteredKeys.Add(new BotKeyPair
+            {
+                Key = key,
+                BotNumber = number
+            });
         }
     }
 }

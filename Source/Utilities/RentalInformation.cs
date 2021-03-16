@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Xml.Serialization;
 
 namespace Utilities
 {
@@ -14,26 +15,29 @@ namespace Utilities
         JP,
         Asia,
     }
+
     public class RentalInformation
     {
-        public DateTime DeliveryTime;
-        public DateTime DropTime;
-        public DateTime CompletionTime;
-        public DateTime ChannelDeletionTime;
+        public DateTime DeliveryTime { get; set; }
+        public DateTime DropTime { get; set; }
+        public DateTime CompletionTime { get; set; }
+        public DateTime ChannelDeletionTime { get; set; }
 
-        public long InternalKeyNumber;
+        public long InternalKeyNumber { get; set; }
 
-        public bool FirmDelivery = false;
-        public bool IsDurationRental = false;
-        public decimal RentalPrice;
-        public string Key;
-        public Region Region;
-        public string DiscordID;
-        public string BotName;
-        public string ChannelName;
+        public bool FirmDelivery { get; set; }
+        public bool IsDurationRental { get; set; }
+        public decimal RentalPrice { get; set; }
+        public string Key { get; set; }
+        public Region Region { get; set; }
+        public string DiscordID { get; set; }
+        public string BotName { get; set; }
+        public string ChannelName { get; set; }
 
         public RentalInformation()
         {
+            FirmDelivery = false;
+            IsDurationRental = false;
             InternalKeyNumber = -1;
         }
 

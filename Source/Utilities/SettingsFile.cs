@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Utilities.Type;
 
 namespace RewardingRentals.Utilities
 {
@@ -15,11 +16,11 @@ namespace RewardingRentals.Utilities
 
         public string FileName = "Settings.txt";
 
-        public Dictionary<string, long> RentableBots;
+        public List<BotNumberPair> RentableBots;
 
         private SettingsFile()
         {
-            RentableBots = new Dictionary<string, long>();
+            RentableBots = new List<BotNumberPair>();
         }
 
         /// <summary>
@@ -85,12 +86,11 @@ namespace RewardingRentals.Utilities
             while (!currentLine.StartsWith('#'))
             {
                 var parts = currentLine.Split(':');
-                var botName = parts[0];
-                var numOwned = parts[1];
-                string botNameTrimmed = String.Concat(botName.Where(c => !Char.IsWhiteSpace(c)));
-                string numOwnedTrimmed = String.Concat(numOwned.Where(c => !Char.IsWhiteSpace(c)));
-
-                RentableBots.Add(botNameTrimmed, Convert.ToInt64(numOwnedTrimmed));
+                RentableBots.Add(new BotNumberPair
+                {
+                    Bot = String.Concat(parts[0].Where(c => !Char.IsWhiteSpace(c))),
+                    Quantity = Convert.ToInt64(String.Concat(parts[1].Where(c => !Char.IsWhiteSpace(c))))
+                });
 
                 currentLine = stream.ReadLine();
                 if (currentLine == null)

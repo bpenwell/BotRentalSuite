@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 using Utilities;
+using Utilities.Type;
 
 namespace RewardingRentals.Server
 {
@@ -31,10 +33,8 @@ namespace RewardingRentals.Server
         /// </summary>
         private ScheduleManager()
         {
-            m_deliveriesInProgress = new SortedList<DateTime, RentalInformation>(new DuplicateKeyComparer<DateTime>());
-            m_undeliveredRentals = new SortedList<DateTime, RentalInformation>(new DuplicateKeyComparer<DateTime>());
-            m_deliveredRentals = new SortedList<DateTime, RentalInformation>(new DuplicateKeyComparer<DateTime>());
-            //Load();
+            m_rentalMaster = new SchedulingRentalMaster();
+            Load();
         }
 
         ~ScheduleManager()
@@ -45,32 +45,31 @@ namespace RewardingRentals.Server
         public string SaveFileName => @"ScheduleManager.xml";
         private string m_absoluteSavePath => Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + Path.DirectorySeparatorChar + SaveFileName;
 
-        /// <summary>
-        /// DateTime should be the delivery time
-        /// </summary>
-        private SortedList<DateTime, RentalInformation> m_undeliveredRentals;
-
-
-        /// <summary>
-        /// DateTime should be the delivery time
-        /// </summary>
-        private SortedList<DateTime, RentalInformation> m_deliveriesInProgress;
-
-        /// <summary>
-        /// DateTime should be the completion time
-        /// </summary>
-        private SortedList<DateTime, RentalInformation> m_deliveredRentals;
+        private SchedulingRentalMaster m_rentalMaster;
 
         public void Load()
         {
             if (File.Exists(m_absoluteSavePath))
             {
                 Console.WriteLine($"Loading latest {m_absoluteSavePath}");
-                using (FileStream fileStream = File.OpenWrite(m_absoluteSavePath))
+                using (FileStream fileStream = File.OpenRead(m_absoluteSavePath))
                 {
-                    AppHelpers.Deserialize(fileStream, m_undeliveredRentals);
-                    AppHelpers.Deserialize(fileStream, m_deliveriesInProgress);
-                    AppHelpers.Deserialize(fileStream, m_deliveredRentals);
+                    Type[] extraTypes = new Type[3];
+                    extraTypes[0] = typeof(RentalContainer);
+                    extraTypes[1] = typeof(DateTime);
+                    extraTypes[2] = typeof(RentalInformation);
+
+                    XmlSerializer serializer = new XmlSerializer(typeof(SchedulingRentalMaster), extraTypes);
+
+                    try
+                    {
+                        m_rentalMaster = serializer.Deserialize(fileStream) as SchedulingRentalMaster;
+                    }
+                    catch (Exception e)
+                    {
+                        throw new Exception(e.Message);
+                    }
+
                 }
             }
         }
@@ -79,7 +78,7 @@ namespace RewardingRentals.Server
         {
             File.Delete(m_absoluteSavePath);
 
-            if (m_undeliveredRentals.Count == 0 && m_deliveriesInProgress.Count == 0 && m_deliveredRentals.Count == 0)
+            if (m_rentalMaster.NoRentalsRecorded())
             {
                 return;
             }
@@ -87,16 +86,21 @@ namespace RewardingRentals.Server
             Console.WriteLine($"Saved latest {m_absoluteSavePath}");
             using (FileStream fileStream = File.OpenWrite(m_absoluteSavePath))
             {
-                AppHelpers.Serialize(fileStream, m_undeliveredRentals);
-                AppHelpers.Serialize(fileStream, m_deliveriesInProgress);
-                AppHelpers.Serialize(fileStream, m_deliveredRentals);
+                Type[] extraTypes = new Type[3];
+                extraTypes[0] = typeof(RentalContainer);
+                extraTypes[1] = typeof(DateTime);
+                extraTypes[2] = typeof(RentalInformation);
+                XmlSerializerNamespaces xmlSerializerNamespaces = new XmlSerializerNamespaces();
+                xmlSerializerNamespaces.Add("", "");
+                XmlSerializer serializer = new XmlSerializer(typeof(SchedulingRentalMaster), extraTypes);
+                serializer.Serialize(fileStream, m_rentalMaster);
             }
         }
 
         public SchedulerResult TryAddToSchedule(string botName, DateTime dropDate, long quantity, string region, string discordID, string channelName, decimal totalPrice, TimeSpan deliveryTimeBeforeDrop, bool firmDelivery)
         {
             var schedulerResult = new SchedulerResult();
-            var beforeUndeliveredCount = m_undeliveredRentals.Count;
+            var beforeUndeliveredCount = m_rentalMaster.UndeliveredRentals.RentalContainerList.Count;
             var quantityLeftToFulfill = quantity;
 
             var regionEnum = AppHelpers.GetRegionEnum(region);
@@ -124,9 +128,9 @@ namespace RewardingRentals.Server
 
             //First check undelivered rentals
             long copiesAlreadyTaken = 0;
-            foreach (var rentalKVP in m_undeliveredRentals)
+            foreach (var rentalContainer in m_rentalMaster.UndeliveredRentals.RentalContainerList)
             {
-                var rental = rentalKVP.Value;
+                var rental = rentalContainer.RentalInfo;
                 if (newRental.IsTheSameDrop(rental))
                 {
                     copiesAlreadyTaken++;
@@ -151,9 +155,9 @@ namespace RewardingRentals.Server
             }
 
             //Now compare that to already delivered rentals
-            foreach (var rentalKVP in m_deliveredRentals)
+            foreach (var rentalContainer in m_rentalMaster.DeliveredRentals.RentalContainerList)
             {
-                var rental = rentalKVP.Value;
+                var rental = rentalContainer.RentalInfo;
                 if (newRental.IsTheSameDrop(rental))
                 {
                     copiesAlreadyTaken++;
@@ -212,9 +216,9 @@ namespace RewardingRentals.Server
                         if (key)
                         {
                             //Prioritize keys that wont move a delivery back
-                            foreach (var deliveryKVP in m_undeliveredRentals)
+                            foreach (var rentalContainer in m_rentalMaster.UndeliveredRentals.RentalContainerList)
                             {
-                                var delivery = deliveryKVP.Value;
+                                var delivery = rentalContainer.RentalInfo;
 
                                 if (newRental.DropTime < delivery.DropTime)
                                 {
@@ -248,7 +252,8 @@ namespace RewardingRentals.Server
                             }
 
                             newRental.InternalKeyNumber = keyNumber;
-                            m_undeliveredRentals.Add(newRental.DeliveryTime, newRental);
+                            m_rentalMaster.UndeliveredRentals.RentalContainerList.Add(new RentalContainer(newRental.DeliveryTime, newRental));
+                            m_rentalMaster.UndeliveredRentals.RentalContainerList.Sort();
                             quantityLeftToFulfill--;
 
                             var regionalTime = AppHelpers.GetRegionalTime(newRental.Region, newRental.DeliveryTime);
@@ -270,10 +275,10 @@ namespace RewardingRentals.Server
                             //Key is available
                             if (key)
                             {
-                                SortedList<DateTime, RentalInformation> originalList = new SortedList<DateTime, RentalInformation>(m_undeliveredRentals, new DuplicateKeyComparer<DateTime>());
-                                foreach (var deliveryKVP in originalList)
+                                var originalList = new List<RentalContainer>(m_rentalMaster.UndeliveredRentals.RentalContainerList);
+                                foreach (var rentalContainer in originalList)
                                 {
-                                    var delivery = deliveryKVP.Value;
+                                    var delivery = rentalContainer.RentalInfo;
 
                                     if (delivery.FirmDelivery || quantityLeftToFulfill == 0)
                                     {
@@ -281,7 +286,8 @@ namespace RewardingRentals.Server
                                     }
 
                                     newRental.InternalKeyNumber = keyNumber;
-                                    m_undeliveredRentals.Add(newRental.DeliveryTime, newRental);
+                                    m_rentalMaster.UndeliveredRentals.RentalContainerList.Add(new RentalContainer(newRental.DeliveryTime, newRental));
+                                    m_rentalMaster.UndeliveredRentals.RentalContainerList.Sort();
                                     quantityLeftToFulfill--;
 
                                     delivery.DeliveryTime = newRental.CompletionTime;
@@ -314,7 +320,7 @@ namespace RewardingRentals.Server
                 {
                     throw new Exception("Sanity check failure: TryAddToSchedule has failed to assign rental a key, but claims success");
                 }
-                else if (m_undeliveredRentals.Count != (beforeUndeliveredCount + quantity))
+                else if (m_rentalMaster.UndeliveredRentals.RentalContainerList.Count != (beforeUndeliveredCount + quantity))
                 {
                     throw new Exception("Sanity check failure: TryAddToSchedule has failed add a success to the undelivered rental list");
                 }
@@ -332,19 +338,20 @@ namespace RewardingRentals.Server
         private async Task BeginDeliveryIfNecessary()
         {
             int index = 0;
-            var unDeliveredRentals = new SortedList<DateTime, RentalInformation>(m_undeliveredRentals, new DuplicateKeyComparer<DateTime>());
-            foreach (var deliveryKVP in unDeliveredRentals)
+            var undeliveredRentals = new List<RentalContainer>(m_rentalMaster.UndeliveredRentals.RentalContainerList);
+            foreach (var rentalContainer in undeliveredRentals)
             {
-                var delivery = deliveryKVP.Value;
+                var delivery = rentalContainer.RentalInfo;
                 if (DateTime.Now > delivery.DeliveryTime)
                 {
-                    m_deliveriesInProgress.Add(deliveryKVP.Key, deliveryKVP.Value);
+                    m_rentalMaster.DeliveriesInProgress.RentalContainerList.Add(rentalContainer);
+                    m_rentalMaster.DeliveriesInProgress.RentalContainerList.Sort();
 
                     Console.WriteLine("Retrieving key...");
                     await DiscordConnection.Instance.SendMessageToChannel(delivery.ChannelName, "Retrieving key... Please allow a minute for processing.");
                     await DeliveryManager.Instance.GetBotKey(delivery.InternalKeyNumber);
 
-                    m_undeliveredRentals.RemoveAt(index);
+                    m_rentalMaster.UndeliveredRentals.RentalContainerList.RemoveAt(index);
                     Save();
                 }
                 index++;
@@ -353,21 +360,22 @@ namespace RewardingRentals.Server
 
         public RentalInformation NextAvailableKey()
         {
-            var currentAvailableKeys = DeliveryManager.Instance.RegisteredKeys;
-            var deliveriesInProgress = new SortedList<DateTime, RentalInformation>(m_deliveriesInProgress, new DuplicateKeyComparer<DateTime>());
-            foreach (var deliveryKVP in deliveriesInProgress)
+            var currentAvailableKeys = DeliveryManager.Instance.RegisteredContainer;
+            var deliveriesInProgress = new List<RentalContainer>(m_rentalMaster.DeliveriesInProgress.RentalContainerList);
+            foreach (var rentalContainer in deliveriesInProgress)
             {
-                var delivery = deliveryKVP.Value;
+                var delivery = rentalContainer.RentalInfo;
 
-                if (currentAvailableKeys.ContainsKey(delivery.InternalKeyNumber))
+                if (currentAvailableKeys.RegisteredKeys.Exists(k => k.BotNumber == delivery.InternalKeyNumber))
                 {
                     RentalInformation rentalInformation = delivery;
-                    var key = currentAvailableKeys[delivery.InternalKeyNumber];
-                    rentalInformation.Key = key;
-                    DeliveryManager.Instance.RegisteredKeys.Remove(delivery.InternalKeyNumber);
+                    var key = currentAvailableKeys.RegisteredKeys.Find(k => k.BotNumber == delivery.InternalKeyNumber);
+                    rentalInformation.Key = key.Key;
+                    DeliveryManager.Instance.RegisteredContainer.RegisteredKeys.Remove(key);
 
-                    m_deliveredRentals.Add(rentalInformation.DeliveryTime, rentalInformation);
-                    m_deliveriesInProgress.RemoveAt(0);
+                    m_rentalMaster.DeliveredRentals.RentalContainerList.Add(rentalContainer);
+                    m_rentalMaster.DeliveredRentals.RentalContainerList.Sort();
+                    m_rentalMaster.DeliveriesInProgress.RentalContainerList.RemoveAt(0);
                     Save();
                     return rentalInformation;
                 }
@@ -379,7 +387,7 @@ namespace RewardingRentals.Server
         public async Task Update()
         {
             await BeginDeliveryIfNecessary();
-            if (DeliveryManager.Instance.RegisteredKeys.Count == 0)
+            if (DeliveryManager.Instance.RegisteredContainer.RegisteredKeys.Count == 0)
             {
                 return;
             }

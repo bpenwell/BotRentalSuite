@@ -3,6 +3,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Xml.Linq;
 using System.Xml.Serialization;
 
 namespace Utilities
@@ -162,27 +164,15 @@ namespace Utilities
         {
             return new TimeSpan(1, 5, 0);
         }
-
-        public static void Serialize(FileStream writer, IDictionary dictionary)
+        public static XElement RemoveAllNamespaces(XElement e)
         {
-            List<Entry> entries = new List<Entry>(dictionary.Count);
-            foreach (object key in dictionary.Keys)
-            {
-                entries.Add(new Entry(key, dictionary[key]));
-            }
-            XmlSerializer serializer = new XmlSerializer(typeof(List<Entry>));
-            serializer.Serialize(writer, entries);
-        }
-
-        public static void Deserialize(FileStream reader, IDictionary dictionary)
-        {
-            dictionary.Clear();
-            XmlSerializer serializer = new XmlSerializer(typeof(List<Entry>));
-            List<Entry> list = (List<Entry>)serializer.Deserialize(reader);
-            foreach (Entry entry in list)
-            {
-                dictionary[entry.Key] = entry.Value;
-            }
+            return new XElement(e.Name.LocalName,
+              (from n in e.Nodes()
+               select ((n is XElement) ? RemoveAllNamespaces(n as XElement) : n)),
+                  (e.HasAttributes) ?
+                    (from a in e.Attributes()
+                     where (!a.IsNamespaceDeclaration)
+                     select new XAttribute(a.Name.LocalName, a.Value)) : null);
         }
     }
 }

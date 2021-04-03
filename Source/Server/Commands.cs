@@ -57,6 +57,7 @@ namespace RewardingRentals.Server
             var ticketChannel = await Context.Guild.CreateTextChannelAsync($"{ticketChannelName}");
             await ticketChannel.AddPermissionOverwriteAsync(Context.Guild.EveryoneRole, AppHelpers.GetEveryonePermissionOverrides());
             await ticketChannel.AddPermissionOverwriteAsync(Context.Guild.Owner, AppHelpers.GetClientPermissionOverrides());
+            await ticketChannel.AddPermissionOverwriteAsync(Context.Guild.GetRole(792170224853057547), AppHelpers.GetClientPermissionOverrides()); //Support
             await ticketChannel.AddPermissionOverwriteAsync(serverUser, AppHelpers.GetClientPermissionOverrides());
             // Confirm success via in the current channel
             EmbedBuilder builder = new EmbedBuilder();

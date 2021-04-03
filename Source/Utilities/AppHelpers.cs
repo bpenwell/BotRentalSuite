@@ -11,8 +11,6 @@ namespace Utilities
 {
     public static class AppHelpers
     {
-        private static long m_ticketNumber = 1;
-
         private static TimeSpan m_latestDeliveryBuffer = new TimeSpan(1, 30, 0);
 
         /// <summary>
@@ -23,9 +21,9 @@ namespace Utilities
         public static string GetNextTicketName(string discordUser, string botName)
         {
             var nameParts = discordUser.Split(' ');
-            var ticketName = $"ticket-{m_ticketNumber}-{botName}";
-            m_ticketNumber++;
-
+            var guidString = Guid.NewGuid().ToString();
+            var guidParts = guidString.Split('-');
+            var ticketName = $"ticket-{guidParts[1]}-{botName}";
             foreach (var part in nameParts)
             {
                 ticketName += $"-{part}";

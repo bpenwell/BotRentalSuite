@@ -15,7 +15,7 @@ namespace Utilities
 
         public InteractionHandler()
         {
-            m_standardInputMSDelay = 250;
+            m_standardInputMSDelay = 500;
             m_inputSimulator = new InputSimulator();
         }
 

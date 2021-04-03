@@ -39,7 +39,7 @@ namespace RewardingRentals.Client
                         Console.WriteLine("Waiting for internet connection");
                     }
 
-                    await Task.Delay(1000);
+                    await Task.Delay(5000);
                 }
 
             }

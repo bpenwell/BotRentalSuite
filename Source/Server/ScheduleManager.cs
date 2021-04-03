@@ -393,7 +393,7 @@ namespace RewardingRentals.Server
             }
 
             var keyToDeliver = NextAvailableKey();
-            await DiscordConnection.Instance.SendMessageToChannel(keyToDeliver.Key, keyToDeliver.ChannelName, true);
+            await DiscordConnection.Instance.SendMessageToChannel(keyToDeliver.ChannelName, keyToDeliver.Key, true);
         }
     }
 }
